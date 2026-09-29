@@ -4,3 +4,5 @@ data/state.json
 .env.*
 !.env.example
 .DS_Store
+
+.vercel

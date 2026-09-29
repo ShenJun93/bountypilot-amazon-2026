@@ -70,7 +70,7 @@ function renderTrace(items) {
     el.className='trace-step';
     el.innerHTML=`<span>${String(index+1).padStart(2,'0')}</span><strong></strong><em></em>`;
     el.querySelector('strong').textContent=item.tool;
-    el.querySelector('em').textContent=item.era;
+    el.querySelector('em').textContent=item.transport;
     trace.append(el);
   }
 }
@@ -82,7 +82,7 @@ function renderResult(payload) {
   verdictNode.textContent=analysis.verdict;
   verdictNode.dataset.kind=analysis.verdict.toLowerCase();
   scoreNode.textContent=analysis.score;
-  runtimeBadge.textContent=`MCP · ${payload.trace[0]?.era ?? 'connected'}`;
+  runtimeBadge.textContent='MCP · connected';
   runtimeBadge.classList.add('connected');
 
   const speech={
@@ -160,7 +160,7 @@ function renderQueue(data) {
 
 async function refreshQueue() {
   const result=await api('/api/queue');
-  runtimeBadge.textContent=`MCP · ${result.era}`;
+  runtimeBadge.textContent='MCP · connected';
   runtimeBadge.classList.add('connected');
   renderQueue(result.queue);
 }

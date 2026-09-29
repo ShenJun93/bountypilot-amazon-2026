@@ -12,7 +12,7 @@ Narration:
 ## 0:15–0:35 — Real MCP surface
 
 Point to:
-- `MCP · modern`
+- `MCP · connected`
 - self-hosted MCP / Streamable HTTP footer.
 
 Explain briefly:
@@ -23,7 +23,7 @@ Optional terminal cut:
 
 Show:
 - 7 tools
-- modern protocol era
+- modern protocol era on the HTTP smoke client
 - successful tool call
 
 ## 0:35–1:05 — Multi-tool triage

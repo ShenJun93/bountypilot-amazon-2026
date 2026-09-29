@@ -97,7 +97,7 @@ Verified in a real BrowserPort session:
 3. `get_opportunity_queue`
 4. `next_best_action`
 
-The UI displayed each tool in the orchestration trace with protocol era `modern`.
+The UI displayed each tool in the orchestration trace as `in-memory-mcp`; the separate HTTP smoke client verified the public `/mcp` endpoint negotiates the modern protocol era.
 
 Then `Build plan` invoked:
 5. `build_submission_plan`
@@ -122,11 +122,13 @@ Server:
 MCP:
 `http://127.0.0.1:4310/mcp`
 
+## Hosted-state note
+
+The verified local workflow persists its queue to `data/state.json`. The Vercel deployment uses function `/tmp` storage, which is ephemeral and may reset on a cold start. Durable cloud persistence is not claimed by this PoC.
+
 ## Remaining gates before submission
 
-- create/publish GitHub repository;
-- verify repository access mode against final submission choice;
-- deploy the MCP server to a publicly reachable HTTPS endpoint;
+- deploy and verify the MCP server at a publicly reachable HTTPS endpoint;
 - record <3 minute English demo;
 - fill Devpost submission fields;
 - final eligibility/rules pass immediately before submit.

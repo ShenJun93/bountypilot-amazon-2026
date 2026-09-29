@@ -54,6 +54,8 @@ The smoke client performs a real initialize handshake, lists tools, calls `analy
 
 Local demo state is stored in `data/state.json` and intentionally ignored by Git. `data/state.example.json` documents the shape.
 
+On Vercel, the demo writes state under the function's `/tmp` directory so the app can operate without a separate database. That storage is ephemeral and may reset on a cold start. Durable hosted persistence is intentionally left as a follow-up integration rather than being overstated in the PoC.
+
 ## Privacy and cost
 
 The current proof of concept uses no paid model API and sends no listing text to a third-party model. State is local to the self-hosted server.
