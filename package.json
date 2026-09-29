@@ -1,0 +1,20 @@
+{
+  "name": "bountypilot-amazon-2026",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stateful Alexa+ hackathon MCP for opportunity triage and submission planning.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "smoke": "node scripts/mcp-smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@modelcontextprotocol/node": "^2.1.0",
+    "@modelcontextprotocol/server": "^2.2.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "zod": "^4.6.5"
+  }
+}

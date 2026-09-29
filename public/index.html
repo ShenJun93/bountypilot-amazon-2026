@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BountyPilot — an Alexa+ hackathon simulation backed by a real stateful MCP workflow.">
+  <title>BountyPilot — Alexa+ MCP simulation</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="orb" aria-hidden="true"></span>
+        <div>
+          <strong>BountyPilot</strong>
+          <span>Alexa+ MCP simulation</span>
+        </div>
+      </div>
+      <div class="runtime" id="runtimeBadge">MCP · waiting</div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">AMAZON DEVELOPER HACKATHON · ALEXA+ TRACK</p>
+      <h1>Ask once.<br><span>Keep the whole opportunity pipeline moving.</span></h1>
+      <p class="lede">A stateful MCP workflow for solo builders: triage a bounty, remember it across sessions, surface blockers, and tell you the next concrete submission action.</p>
+    </section>
+
+    <section class="grid">
+      <article class="panel composer">
+        <div class="panel-head">
+          <div>
+            <span class="kicker">01 · Opportunity</span>
+            <h2>“Alexa, is this worth building?”</h2>
+          </div>
+          <button class="quiet" id="resetButton" type="button">Reset demo</button>
+        </div>
+
+        <label for="titleInput">Title</label>
+        <input id="titleInput" value="Build With AI: Basics" autocomplete="off">
+
+        <label for="listingInput">Listing text</label>
+        <textarea id="listingInput" rows="12">Build With AI: Basics. $1,250 cash first prize. Deadline: October 26, 2026. Build a new app and submit a public GitHub repository plus a 1–3 minute demo video. No interview required. Judging is asynchronous after submission.</textarea>
+
+        <div class="samples">
+          <span>Load scenario:</span>
+          <button type="button" data-sample="go">Async hackathon</button>
+          <button type="button" data-sample="review">Pre-hire bounty</button>
+          <button type="button" data-sample="skip">Live interview</button>
+        </div>
+
+        <button class="primary" id="triageButton" type="button">
+          <span>Ask BountyPilot</span>
+          <span aria-hidden="true">→</span>
+        </button>
+
+        <p class="fine">The simulator invokes the self-hosted MCP server over Streamable HTTP. Queue state persists locally between browser sessions.</p>
+      </article>
+
+      <article class="panel response">
+        <div class="empty" id="emptyState">
+          <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          <h2>Ready for a real MCP workflow</h2>
+          <p>The demo will call four tools in sequence: analyze → save → queue → next action.</p>
+        </div>
+
+        <div class="result hidden" id="resultState">
+          <div class="verdict-row">
+            <div>
+              <span class="kicker">Decision</span>
+              <div class="verdict" id="verdict">—</div>
+            </div>
+            <div class="score"><span id="score">0</span><small>/100</small></div>
+          </div>
+          <p class="voice" id="voiceAnswer"></p>
+
+          <div class="facts" id="facts"></div>
+
+          <section>
+            <h3>Why</h3>
+            <ul id="reasons"></ul>
+          </section>
+
+          <section>
+            <h3>MCP orchestration trace</h3>
+            <div class="trace" id="trace"></div>
+          </section>
+
+          <section>
+            <h3>Next action</h3>
+            <div class="next" id="nextAction"></div>
+          </section>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel queue-panel">
+      <div class="panel-head">
+        <div>
+          <span class="kicker">02 · Persistent context</span>
+          <h2>Opportunity queue</h2>
+        </div>
+        <button class="quiet" id="refreshQueueButton" type="button">Refresh</button>
+      </div>
+      <div id="queue" class="queue">
+        <p class="queue-empty">Nothing saved yet.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>Self-hosted MCP · Streamable HTTP</span>
+      <span>State across sessions · explainable decisions · no paid API required</span>
+    </footer>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
