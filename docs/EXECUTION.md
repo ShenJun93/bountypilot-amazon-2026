@@ -126,9 +126,24 @@ MCP:
 
 The verified local workflow persists its queue to `data/state.json`. The Vercel deployment uses function `/tmp` storage, which is ephemeral and may reset on a cold start. Durable cloud persistence is not claimed by this PoC.
 
+## Production deployment
+
+Production app:
+`https://bountypilot-amazon-2026.vercel.app`
+
+Production MCP endpoint:
+`https://bountypilot-amazon-2026.vercel.app/mcp`
+
+Verified on 2026-09-29:
+- `GET /health` → HTTP 200, `status=ok`, `transport=streamable-http`.
+- `GET /` → HTTP 200.
+- Remote MCP initialize handshake → protocol era `modern`.
+- Remote `tools/list` → 7 tools.
+- Remote `analyze_opportunity` → GO, score 98 on the smoke listing.
+- Vercel build detected `server.js` as the root Express entrypoint and completed successfully.
+
 ## Remaining gates before submission
 
-- deploy and verify the MCP server at a publicly reachable HTTPS endpoint;
 - record <3 minute English demo;
 - fill Devpost submission fields;
 - final eligibility/rules pass immediately before submit.
