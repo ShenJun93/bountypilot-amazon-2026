@@ -16,15 +16,16 @@ Point to:
 - self-hosted MCP / Streamable HTTP footer.
 
 Explain briefly:
-“The simulator is a client of the same self-hosted MCP endpoint. The browser does not call the analyzer directly.”
+“The simulator uses the official MCP client and the same seven tool definitions. The public `/mcp` route exposes them over Streamable HTTP for external clients.”
 
-Optional terminal cut:
-`npm run smoke`
+Terminal cut:
+`node .oss/mcp-protocol-proof/bin/mcp-protocol-proof.mjs https://bountypilot-amazon-2026.vercel.app/mcp --min 2025-11-25 --expect-tool analyze_opportunity --expect-tool next_best_action`
 
 Show:
+- negotiated protocol `2026-07-28`
+- minimum `2025-11-25`
 - 7 tools
-- modern protocol era on the HTTP smoke client
-- successful tool call
+- PASS
 
 ## 0:35–1:05 — Multi-tool triage
 
