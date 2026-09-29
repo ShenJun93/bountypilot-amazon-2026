@@ -18,6 +18,7 @@ try {
     }
   });
   console.log(JSON.stringify({
+    protocolVersion:client.getNegotiatedProtocolVersion?.() ?? 'unknown',
     protocolEra:client.getProtocolEra?.() ?? 'unknown',
     toolCount:tools.tools.length,
     tools:tools.tools.map((tool)=>tool.name),

@@ -45,7 +45,7 @@ Registered tools:
 6. `set_opportunity_status`
 7. `next_best_action`
 
-The web simulator calls the MCP endpoint with `@modelcontextprotocol/client`; it does not bypass the tool layer and call analyzer/store functions directly.
+The web simulator uses `@modelcontextprotocol/client` over the SDK's `InMemoryTransport`; it does not bypass the MCP tool layer and call analyzer/store functions directly. The separately exposed `/mcp` route serves the same seven tools over Streamable HTTP for external clients.
 
 ## State
 
@@ -78,6 +78,7 @@ Coverage exercised:
 `node scripts/mcp-smoke.mjs`
 
 Observed:
+- negotiated protocol version: `2026-07-28`
 - protocol era: `modern`
 - tools: 7
 - tool-list handshake PASS
