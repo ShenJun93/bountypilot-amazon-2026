@@ -121,7 +121,8 @@ export async function converse({utterance='',title='',listing='',workspace='defa
       const next=data(await call('next_best_action'));
       cards.push({type:'status',title:target.title,status:intent.status});
       reply=`Got it, ${target.title} is now ${intent.status}.`;
-      if (next.opportunity) reply+=` Next up: ${next.opportunity.title}. ${next.nextAction}`;
+      if (next.opportunity?.id===target.id) reply+=` ${next.nextAction}`;
+      else if (next.opportunity) reply+=` Next up: ${next.opportunity.title}. ${next.nextAction}`;
     } else {
       const plan=data(await call('build_submission_plan',{id:target.id}));
       cards.push({type:'plan',title:plan.title,status:plan.status,steps:plan.steps});
