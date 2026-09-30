@@ -173,10 +173,11 @@ export function analyzeOpportunity({title='', listing=''}) {
 
 export function buildSubmissionPlan(opportunity) {
   const a=opportunity.analysis;
+  if (opportunity.status==='submitted') return ['Watch for the results announcement, then record the outcome as won or lost.'];
   const steps=[];
+  if (a.signals.preHireGate) steps.push('Wait for formal assignment/hiring before opening an implementation PR.');
   if (!a.deadline) steps.push('Verify the official deadline before allocating build time.');
   if (!a.reward) steps.push('Verify the exact prize/reward and payout terms.');
-  if (a.signals.preHireGate) steps.push('Wait for formal assignment/hiring before opening an implementation PR.');
   if (a.verdict==='SKIP') {
     steps.push('Do not allocate implementation time unless the blocking live/unpaid condition changes.');
     return steps;

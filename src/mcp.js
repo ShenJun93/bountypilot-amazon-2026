@@ -1,8 +1,12 @@
 import {McpServer, createMcpHandler} from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 import {analyzeOpportunity, buildSubmissionPlan} from './analyzer.js';
+import {WORKSPACE_PATTERN} from './backends.js';
 
 const statuses=['candidate','building','submitted','won','lost','skipped'];
+
+const workspace=z.string().regex(WORKSPACE_PATTERN).optional()
+  .describe('Queue to read or write. Each user or device keeps its own workspace; defaults to "default".');
 
 function result(value) {
   return {
@@ -11,9 +15,14 @@ function result(value) {
   };
 }
 
+function notFound() {
+  return {content:[{type:'text',text:'Opportunity not found'}],isError:true};
+}
+
 export function buildMcpServer(store) {
+  const scoped=(id)=>store.forWorkspace(id ?? 'default');
   const server=new McpServer(
-    {name:'bountypilot',version:'0.1.0',websiteUrl:'https://github.com/'},
+    {name:'bountypilot',version:'0.2.0',websiteUrl:'https://github.com/ShenJun93/bountypilot-amazon-2026'},
     {capabilities:{tools:{}}}
   );
 
@@ -40,12 +49,13 @@ export function buildMcpServer(store) {
       inputSchema:z.object({
         title:z.string().min(1),
         listing:z.string().min(20),
-        sourceUrl:z.string().url().optional()
+        sourceUrl:z.string().url().optional(),
+        workspace
       })
     },
-    async ({title,listing,sourceUrl})=>{
+    async ({title,listing,sourceUrl,workspace:ws})=>{
       const analysis=analyzeOpportunity({title,listing});
-      return result(await store.saveOpportunity({title,listing,sourceUrl:sourceUrl??null,analysis}));
+      return result(await scoped(ws).saveOpportunity({title,listing,sourceUrl:sourceUrl??null,analysis}));
     }
   );
 
@@ -53,12 +63,12 @@ export function buildMcpServer(store) {
     'get_opportunity_queue',
     {
       description:'Return the persistent opportunity queue ordered by active status and fit score.',
-      inputSchema:z.object({})
+      inputSchema:z.object({workspace})
     },
-    async ()=>result({
-      profile:await store.getProfile(),
-      opportunities:await store.list()
-    })
+    async ({workspace:ws})=>{
+      const s=scoped(ws);
+      return result({profile:await s.getProfile(),opportunities:await s.list()});
+    }
   );
 
   server.registerTool(
@@ -84,11 +94,11 @@ export function buildMcpServer(store) {
     'build_submission_plan',
     {
       description:'Build a concrete next-action submission plan for one saved opportunity.',
-      inputSchema:z.object({id:z.string().uuid()})
+      inputSchema:z.object({id:z.string().uuid(),workspace})
     },
-    async ({id})=>{
-      const item=await store.get(id);
-      if (!item) return {content:[{type:'text',text:'Opportunity not found'}],isError:true};
+    async ({id,workspace:ws})=>{
+      const item=await scoped(ws).get(id);
+      if (!item) return notFound();
       return result({id:item.id,title:item.title,status:item.status,verdict:item.analysis.verdict,steps:buildSubmissionPlan(item)});
     }
   );
@@ -99,12 +109,13 @@ export function buildMcpServer(store) {
       description:'Update a saved opportunity status as the builder moves from candidate to building, submitted, or a terminal result.',
       inputSchema:z.object({
         id:z.string().uuid(),
-        status:z.enum(statuses)
+        status:z.enum(statuses),
+        workspace
       })
     },
-    async ({id,status})=>{
-      const item=await store.updateStatus(id,status);
-      if (!item) return {content:[{type:'text',text:'Opportunity not found'}],isError:true};
+    async ({id,status,workspace:ws})=>{
+      const item=await scoped(ws).updateStatus(id,status);
+      if (!item) return notFound();
       return result({id:item.id,title:item.title,status:item.status,updatedAt:item.updatedAt});
     }
   );
@@ -113,11 +124,13 @@ export function buildMcpServer(store) {
     'next_best_action',
     {
       description:'Choose the highest-fit active saved opportunity and return the next concrete action, preserving blockers and unknowns.',
-      inputSchema:z.object({})
+      inputSchema:z.object({workspace})
     },
-    async ()=>{
-      const items=await store.list();
-      const active=items.filter((item)=>!['won','lost','skipped'].includes(item.status));
+    async ({workspace:ws})=>{
+      const items=await scoped(ws).list();
+      const open=items.filter((item)=>!['won','lost','skipped'].includes(item.status));
+      // Work that can still move comes before work that is only waiting on judges.
+      const active=[...open.filter((i)=>i.status!=='submitted'),...open.filter((i)=>i.status==='submitted')];
       if (!active.length) return result({message:'No active opportunities in the queue.',opportunity:null,nextAction:null});
       const item=active[0];
       const plan=buildSubmissionPlan(item);

@@ -17,98 +17,83 @@
           <span>Alexa+ MCP simulation</span>
         </div>
       </div>
-      <div class="runtime" id="runtimeBadge">MCP · waiting</div>
+      <div class="badges">
+        <span class="runtime" id="storageBadge" title="Where your queue is stored">State · checking</span>
+        <span class="runtime" id="runtimeBadge">MCP · waiting</span>
+        <button class="runtime toggle" id="voiceToggle" type="button" aria-pressed="true">Voice replies · on</button>
+      </div>
     </header>
 
-    <section class="hero">
+    <section class="hero compact">
       <p class="eyebrow">AMAZON DEVELOPER HACKATHON · ALEXA+ TRACK</p>
       <h1>Ask once.<br><span>Keep the whole opportunity pipeline moving.</span></h1>
-      <p class="lede">A stateful MCP workflow for solo builders: triage a bounty, remember it across sessions, surface blockers, and tell you the next concrete submission action.</p>
+      <p class="lede">Talk to BountyPilot the way you would talk to Alexa. It triages bounties and hackathons, remembers them across sessions, and tells you the next concrete step. Every answer comes from real MCP tool calls.</p>
     </section>
 
     <section class="grid">
-      <article class="panel composer">
+      <article class="panel device" aria-label="Conversation with BountyPilot">
         <div class="panel-head">
           <div>
-            <span class="kicker">01 · Opportunity</span>
-            <h2>“Alexa, is this worth building?”</h2>
+            <span class="kicker">01 · Conversation</span>
+            <h2>“Alexa, open BountyPilot”</h2>
           </div>
-          <button class="quiet" id="resetButton" type="button">Reset demo</button>
+          <button class="quiet" id="newSessionButton" type="button" title="Clear the conversation but keep your saved queue">New session</button>
         </div>
 
-        <label for="titleInput">Title</label>
-        <input id="titleInput" value="Build With AI: Basics" autocomplete="off">
+        <div class="transcript" id="transcript" aria-live="polite"></div>
 
-        <label for="listingInput">Listing text</label>
-        <textarea id="listingInput" rows="12">Build With AI: Basics. $1,250 cash first prize. Deadline: October 26, 2026. Build a new app and submit a public GitHub repository plus a 1–3 minute demo video. No interview required. Judging is asynchronous after submission.</textarea>
+        <form class="composer" id="composer">
+          <div class="chips" aria-label="Suggested requests">
+            <button type="button" data-say="Alexa, open BountyPilot">Open BountyPilot</button>
+            <button type="button" data-say="What should I work on today?">What should I work on today?</button>
+            <button type="button" data-say="What's in my queue?">What's in my queue?</button>
+            <button type="button" data-say="Plan my top opportunity">Plan my top opportunity</button>
+            <button type="button" data-say="I submitted it">I submitted it</button>
+          </div>
+          <div class="chips listing-chips" aria-label="Attach a sample listing">
+            <span>Ask about a listing:</span>
+            <button type="button" data-sample="go">Async hackathon</button>
+            <button type="button" data-sample="review">Pre-hire bounty</button>
+            <button type="button" data-sample="skip">Live interview</button>
+            <button type="button" id="ownListingButton">Paste your own</button>
+          </div>
 
-        <div class="samples">
-          <span>Load scenario:</span>
-          <button type="button" data-sample="go">Async hackathon</button>
-          <button type="button" data-sample="review">Pre-hire bounty</button>
-          <button type="button" data-sample="skip">Live interview</button>
-        </div>
-
-        <button class="primary" id="triageButton" type="button">
-          <span>Ask BountyPilot</span>
-          <span aria-hidden="true">→</span>
-        </button>
-
-        <p class="fine">The simulator uses the same MCP tool surface as the public Streamable HTTP endpoint. Local mode persists to disk; hosted demo state may reset after a serverless cold start.</p>
-      </article>
-
-      <article class="panel response">
-        <div class="empty" id="emptyState">
-          <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-          <h2>Ready for a real MCP workflow</h2>
-          <p>The demo will call four tools in sequence: analyze → save → queue → next action.</p>
-        </div>
-
-        <div class="result hidden" id="resultState">
-          <div class="verdict-row">
-            <div>
-              <span class="kicker">Decision</span>
-              <div class="verdict" id="verdict">—</div>
+          <div class="attachment hidden" id="attachment">
+            <div class="attachment-head">
+              <strong id="attachmentTitle">Listing</strong>
+              <button type="button" class="quiet" id="removeAttachment">Remove</button>
             </div>
-            <div class="score"><span id="score">0</span><small>/100</small></div>
+            <input id="listingTitle" placeholder="Title" autocomplete="off">
+            <textarea id="listingText" rows="5" placeholder="Paste the bounty or hackathon listing text"></textarea>
           </div>
-          <p class="voice" id="voiceAnswer"></p>
 
-          <div class="facts" id="facts"></div>
-
-          <section>
-            <h3>Why</h3>
-            <ul id="reasons"></ul>
-          </section>
-
-          <section>
-            <h3>MCP orchestration trace</h3>
-            <div class="trace" id="trace"></div>
-          </section>
-
-          <section>
-            <h3>Next action</h3>
-            <div class="next" id="nextAction"></div>
-          </section>
-        </div>
+          <div class="say">
+            <input id="utterance" placeholder="Say something to BountyPilot…" autocomplete="off">
+            <button class="primary" id="sendButton" type="submit">Ask</button>
+          </div>
+        </form>
       </article>
-    </section>
 
-    <section class="panel queue-panel">
-      <div class="panel-head">
-        <div>
-          <span class="kicker">02 · Persistent context</span>
-          <h2>Opportunity queue</h2>
+      <aside class="panel side">
+        <div class="panel-head">
+          <div>
+            <span class="kicker">02 · Persistent context</span>
+            <h2>Your opportunity queue</h2>
+          </div>
+          <button class="quiet" id="refreshQueueButton" type="button">Refresh</button>
         </div>
-        <button class="quiet" id="refreshQueueButton" type="button">Refresh</button>
-      </div>
-      <div id="queue" class="queue">
-        <p class="queue-empty">Nothing saved yet.</p>
-      </div>
+        <div id="queue" class="queue">
+          <p class="queue-empty">Nothing saved yet.</p>
+        </div>
+        <div class="workspace">
+          <p>Your queue is private to this browser (workspace <code id="workspaceId">—</code>). Close the tab and come back later: BountyPilot will greet you with where you left off.</p>
+          <button class="quiet" id="resetButton" type="button">Clear my queue</button>
+        </div>
+      </aside>
     </section>
 
     <footer>
-      <span>Self-hosted MCP · Streamable HTTP</span>
+      <span>Self-hosted MCP · Streamable HTTP · 7 tools</span>
       <span>State across sessions · explainable decisions · no paid API required</span>
     </footer>
   </main>

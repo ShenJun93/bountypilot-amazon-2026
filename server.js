@@ -6,27 +6,32 @@ import {Client} from '@modelcontextprotocol/client';
 import {InMemoryTransport} from '@modelcontextprotocol/server';
 import {toNodeHandler} from '@modelcontextprotocol/node';
 import {OpportunityStore} from './src/store.js';
+import {assertWorkspace, backendFromEnv} from './src/backends.js';
 import {buildMcpServer, createBountyPilotHandler} from './src/mcp.js';
+import {converse} from './src/conversation.js';
 
 const root=fileURLToPath(new URL('.',import.meta.url));
 const port=Number(process.env.PORT || 4310);
 const isVercel=Boolean(process.env.VERCEL);
-const stateFile=process.env.BOUNTYPILOT_STATE
-  || (isVercel ? join(tmpdir(),'bountypilot-state.json') : join(root,'data','state.json'));
 
-const store=new OpportunityStore(stateFile);
-const mcpHandler=createBountyPilotHandler(store);
-const mcpNodeHandler=toNodeHandler(mcpHandler);
+const backend=backendFromEnv(process.env,{
+  isVercel,
+  defaultFile:join(root,'data','state.json'),
+  tmpFile:join(tmpdir(),'bountypilot-state.json')
+});
+const store=new OpportunityStore(backend);
+const mcpNodeHandler=toNodeHandler(createBountyPilotHandler(store));
 
 function structured(call) {
   return call.response?.structuredContent ?? call.response?.content?.[0]?.text ?? null;
 }
 
+// The simulator is an ordinary MCP client: it never calls the store directly.
 async function callMcpTool(name,args={}) {
   const [clientTransport,serverTransport]=InMemoryTransport.createLinkedPair();
   const server=buildMcpServer(store);
   const client=new Client(
-    {name:'bountypilot-alexa-simulator',version:'0.1.0'},
+    {name:'bountypilot-alexa-simulator',version:'0.2.0'},
     {versionNegotiation:{mode:'auto'}}
   );
 
@@ -36,10 +41,15 @@ async function callMcpTool(name,args={}) {
       client.connect(clientTransport)
     ]);
     const response=await client.callTool({name,arguments:args});
+    if (response.isError) throw new Error(response.content?.[0]?.text ?? `${name} failed`);
     return {transport:'in-memory-mcp',response};
   } finally {
     await Promise.allSettled([client.close(),server.close()]);
   }
+}
+
+function workspaceFrom(value) {
+  return assertWorkspace(typeof value==='string' && value ? value : 'default');
 }
 
 const app=express();
@@ -57,77 +67,32 @@ app.all('/mcp',async (req,res)=>{
 
 app.use(express.json({limit:'256kb'}));
 
-app.post('/api/triage',async (req,res,next)=>{
+app.post('/api/converse',async (req,res,next)=>{
   try {
     const body=req.body ?? {};
-    const trace=[];
-
-    const analyzed=await callMcpTool('analyze_opportunity',{
-      title:body.title,
-      listing:body.listing,
-      ...(body.sourceUrl?{sourceUrl:body.sourceUrl}:{})
-    });
-    trace.push({tool:'analyze_opportunity',transport:analyzed.transport});
-
-    const saved=await callMcpTool('save_opportunity',{
-      title:body.title,
-      listing:body.listing,
-      ...(body.sourceUrl?{sourceUrl:body.sourceUrl}:{})
-    });
-    trace.push({tool:'save_opportunity',transport:saved.transport});
-
-    const queue=await callMcpTool('get_opportunity_queue',{});
-    trace.push({tool:'get_opportunity_queue',transport:queue.transport});
-
-    const next=await callMcpTool('next_best_action',{});
-    trace.push({tool:'next_best_action',transport:next.transport});
-
-    res.json({
-      analysis:structured(analyzed),
-      saved:structured(saved),
-      queue:structured(queue),
-      next:structured(next),
-      trace
-    });
+    res.json(await converse({
+      utterance:String(body.utterance ?? ''),
+      title:String(body.title ?? ''),
+      listing:String(body.listing ?? ''),
+      workspace:workspaceFrom(body.workspace)
+    },callMcpTool));
   } catch (error) {
     next(error);
   }
 });
 
-app.get('/api/queue',async (_req,res,next)=>{
+app.get('/api/queue',async (req,res,next)=>{
   try {
-    const queue=await callMcpTool('get_opportunity_queue',{});
+    const queue=await callMcpTool('get_opportunity_queue',{workspace:workspaceFrom(req.query.workspace)});
     res.json({queue:structured(queue),transport:queue.transport});
   } catch (error) {
     next(error);
   }
 });
 
-app.post('/api/plan',async (req,res,next)=>{
+app.post('/api/reset',async (req,res,next)=>{
   try {
-    const plan=await callMcpTool('build_submission_plan',{id:req.body?.id});
-    res.json({plan:structured(plan),transport:plan.transport});
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/status',async (req,res,next)=>{
-  try {
-    const changed=await callMcpTool('set_opportunity_status',{
-      id:req.body?.id,
-      status:req.body?.status
-    });
-    const queue=await callMcpTool('get_opportunity_queue',{});
-    res.json({changed:structured(changed),queue:structured(queue),transport:changed.transport});
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post('/api/reset',async (_req,res,next)=>{
-  try {
-    await store.reset();
+    await store.forWorkspace(workspaceFrom(req.body?.workspace)).reset();
     res.json({ok:true});
   } catch (error) {
     next(error);
@@ -135,12 +100,7 @@ app.post('/api/reset',async (_req,res,next)=>{
 });
 
 app.get('/health',(_req,res)=>{
-  res.json({
-    status:'ok',
-    service:'bountypilot',
-    transport:'streamable-http',
-    state:isVercel?'ephemeral-vercel-tmp':'local-file'
-  });
+  res.json({status:'ok',service:'bountypilot',transport:'streamable-http',state:store.storageKind});
 });
 
 app.use(express.static(join(root,'public'),{
@@ -150,13 +110,15 @@ app.use(express.static(join(root,'public'),{
 }));
 
 app.use((error,_req,res,_next)=>{
-  res.status(500).json({error:error instanceof Error?error.message:String(error)});
+  const status=/workspace must be/.test(error?.message ?? '') ? 400 : 500;
+  res.status(status).json({error:error instanceof Error?error.message:String(error)});
 });
 
 if (!isVercel) {
   app.listen(port,'127.0.0.1',()=>{
     console.log(`BountyPilot MCP + Alexa+ simulator: http://127.0.0.1:${port}`);
     console.log(`MCP endpoint: http://127.0.0.1:${port}/mcp`);
+    console.log(`State: ${store.storageKind}`);
   });
 }
 

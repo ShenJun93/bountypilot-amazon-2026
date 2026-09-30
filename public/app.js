@@ -1,21 +1,17 @@
 const $=(selector)=>document.querySelector(selector);
 
-const titleInput=$('#titleInput');
-const listingInput=$('#listingInput');
-const triageButton=$('#triageButton');
-const resetButton=$('#resetButton');
-const refreshQueueButton=$('#refreshQueueButton');
-const emptyState=$('#emptyState');
-const resultState=$('#resultState');
-const runtimeBadge=$('#runtimeBadge');
-const verdictNode=$('#verdict');
-const scoreNode=$('#score');
-const voiceAnswer=$('#voiceAnswer');
-const facts=$('#facts');
-const reasons=$('#reasons');
-const trace=$('#trace');
-const nextAction=$('#nextAction');
+const transcript=$('#transcript');
+const composer=$('#composer');
+const utteranceInput=$('#utterance');
+const sendButton=$('#sendButton');
+const attachment=$('#attachment');
+const attachmentTitle=$('#attachmentTitle');
+const listingTitle=$('#listingTitle');
+const listingText=$('#listingText');
 const queue=$('#queue');
+const runtimeBadge=$('#runtimeBadge');
+const storageBadge=$('#storageBadge');
+const voiceToggle=$('#voiceToggle');
 
 const samples={
   go:{
@@ -32,6 +28,47 @@ const samples={
   }
 };
 
+const storageLabels={
+  'redis-durable':['State · durable','Saved in Redis; survives restarts and redeploys.',true],
+  'local-file':['State · local file','Saved to data/state.json on this machine.',true],
+  'ephemeral-vercel-tmp':['State · temporary','Hosted demo without a database: the queue may reset on a cold start.',false],
+  memory:['State · memory','In-memory only.',false]
+};
+
+function storageGet(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function storageSet(key,value) {
+  try { localStorage.setItem(key,value); } catch { /* private mode: fall back to a per-tab id */ }
+}
+
+let workspace=storageGet('bountypilot.workspace');
+if (!workspace || !/^[A-Za-z0-9_-]{1,64}$/.test(workspace)) {
+  workspace=crypto.randomUUID();
+  storageSet('bountypilot.workspace',workspace);
+}
+$('#workspaceId').textContent=workspace.slice(0,8);
+
+const canSpeak='speechSynthesis' in window;
+let voiceOn=canSpeak && storageGet('bountypilot.voice')!=='off';
+let userHasInteracted=false;
+
+function renderVoiceToggle() {
+  voiceToggle.hidden=!canSpeak;
+  voiceToggle.textContent=`Voice replies · ${voiceOn?'on':'off'}`;
+  voiceToggle.setAttribute('aria-pressed',String(voiceOn));
+}
+
+function speak(text) {
+  // Browsers block speech before the first user gesture, so the page-load greeting stays silent.
+  if (!voiceOn || !userHasInteracted) return;
+  speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang='en-US';
+  utterance.rate=1.02;
+  speechSynthesis.speak(utterance);
+}
+
 async function api(path,options={}) {
   const response=await fetch(path,{
     ...options,
@@ -42,162 +79,255 @@ async function api(path,options={}) {
   return body;
 }
 
-function setBusy(busy) {
-  triageButton.disabled=busy;
-  triageButton.querySelector('span').textContent=busy?'Running MCP workflow…':'Ask BountyPilot';
+function el(tag,className,text) {
+  const node=document.createElement(tag);
+  if (className) node.className=className;
+  if (text!==undefined) node.textContent=text;
+  return node;
 }
 
-function renderFacts(analysis) {
-  facts.innerHTML='';
-  const items=[
-    ['Reward',analysis.reward?.text ?? 'Unknown'],
-    ['Deadline',analysis.deadline ?? 'Unknown'],
-    ['Live gate',analysis.signals.liveGate?'Detected':'None detected'],
-    ['Pre-hire',analysis.signals.preHireGate?'Required':'None detected']
-  ];
-  for (const [label,value] of items) {
-    const el=document.createElement('div');
-    el.innerHTML=`<span>${label}</span><strong></strong>`;
-    el.querySelector('strong').textContent=value;
-    facts.append(el);
-  }
+function scrollToEnd() {
+  transcript.scrollTop=transcript.scrollHeight;
 }
 
-function renderTrace(items) {
-  trace.innerHTML='';
-  for (const [index,item] of items.entries()) {
-    const el=document.createElement('div');
-    el.className='trace-step';
-    el.innerHTML=`<span>${String(index+1).padStart(2,'0')}</span><strong></strong><em></em>`;
-    el.querySelector('strong').textContent=item.tool;
-    el.querySelector('em').textContent=item.transport;
-    trace.append(el);
-  }
+function addUserTurn(text,listing) {
+  const turn=el('div','turn user');
+  turn.append(el('p','bubble',text));
+  if (listing) turn.append(el('p','attached',`Listing attached: ${listing.title || 'untitled'}`));
+  transcript.append(turn);
+  scrollToEnd();
 }
 
-function renderResult(payload) {
-  const analysis=payload.analysis.analysis;
-  emptyState.classList.add('hidden');
-  resultState.classList.remove('hidden');
-  verdictNode.textContent=analysis.verdict;
-  verdictNode.dataset.kind=analysis.verdict.toLowerCase();
-  scoreNode.textContent=analysis.score;
-  runtimeBadge.textContent='MCP · connected';
-  runtimeBadge.classList.add('connected');
+function renderOpportunityCard(card) {
+  const box=el('div','card opportunity');
+  const head=el('div','card-head');
+  const verdict=el('span','verdict-chip',card.verdict);
+  verdict.dataset.kind=card.verdict.toLowerCase();
+  head.append(verdict,el('strong','',card.title),el('span','card-score',`${card.score}/100`));
+  box.append(head);
 
-  const speech={
-    GO:`This is a strong fit. I saved ${analysis.title} to your queue and kept the blockers visible.`,
-    REVIEW:`This may be worth pursuing, but there is a gate or missing fact to resolve before coding.`,
-    SKIP:`I would not allocate build time under your current profile because I found a blocking live or unpaid condition.`
-  };
-  voiceAnswer.textContent=speech[analysis.verdict];
-  renderFacts(analysis);
-
-  reasons.innerHTML='';
-  for (const reason of [...analysis.reasons,...analysis.unknowns.map((x)=>`Unknown: ${x}`)]) {
-    const li=document.createElement('li');
-    li.textContent=reason;
-    reasons.append(li);
+  const facts=el('div','facts');
+  for (const [label,value] of [
+    ['Reward',card.reward ?? 'Unknown'],
+    ['Deadline',card.deadline ?? 'Unknown'],
+    ['Live gate',card.liveGate?'Detected':'None detected'],
+    ['Pre-hire',card.preHire?'Required':'None detected']
+  ]) {
+    const cell=el('div');
+    cell.append(el('span','',label),el('strong','',value));
+    facts.append(cell);
   }
+  box.append(facts);
 
-  renderTrace(payload.trace);
-  const next=payload.next;
-  nextAction.textContent=next.nextAction ?? 'No active next action.';
-  renderQueue(payload.queue);
+  const why=[...card.reasons,...card.unknowns.map((x)=>`Unknown: ${x}`)];
+  if (why.length) {
+    const list=el('ul','why');
+    for (const line of why) list.append(el('li','',line));
+    box.append(list);
+  }
+  return box;
+}
+
+function renderPlanCard(card) {
+  const box=el('div','card plan-card');
+  const head=el('div','card-head');
+  head.append(el('strong','',`Plan · ${card.title}`),el('span','status',card.status));
+  box.append(head);
+  const list=el('ol');
+  for (const step of card.steps) list.append(el('li','',step));
+  box.append(list);
+  return box;
+}
+
+function renderQueueCarousel(card) {
+  const rail=el('div','carousel');
+  if (!card.items.length) {
+    rail.append(el('p','queue-empty','Nothing saved yet.'));
+    return rail;
+  }
+  for (const item of card.items) {
+    const tile=el('div','tile');
+    tile.append(el('strong','tile-score',String(item.score)),el('span','tile-title',item.title));
+    const meta=el('span','tile-meta',`${item.verdict} · ${item.status}`);
+    tile.append(meta,el('span','tile-sub',item.reward ?? 'reward unknown'));
+    rail.append(tile);
+  }
+  return rail;
+}
+
+function renderStatusCard(card) {
+  return el('div','card status-card',`${card.title} → ${card.status}`);
+}
+
+const renderers={
+  opportunity:renderOpportunityCard,
+  plan:renderPlanCard,
+  queue:renderQueueCarousel,
+  status:renderStatusCard
+};
+
+function addAssistantTurn(payload) {
+  const turn=el('div','turn assistant');
+  const bubble=el('div','bubble');
+  bubble.append(el('span','orb small'),el('p','',payload.reply));
+  turn.append(bubble);
+  for (const card of payload.cards ?? []) turn.append(renderers[card.type](card));
+
+  if (payload.trace?.length) {
+    const details=el('details','trace');
+    details.append(el('summary','',`${payload.trace.length} MCP tool call${payload.trace.length===1?'':'s'}`));
+    const list=el('ol');
+    for (const step of payload.trace) {
+      const li=el('li');
+      li.append(el('strong','',step.tool),el('em','',step.transport));
+      list.append(li);
+    }
+    details.append(list);
+    turn.append(details);
+  }
+  transcript.append(turn);
+  scrollToEnd();
+  speak(payload.reply);
+}
+
+function addErrorTurn(message) {
+  const turn=el('div','turn assistant');
+  turn.append(el('p','bubble error',`Something went wrong: ${message}`));
+  transcript.append(turn);
+  scrollToEnd();
 }
 
 function renderQueue(data) {
-  const opportunities=data?.opportunities ?? data?.queue?.opportunities ?? [];
+  const opportunities=data?.opportunities ?? [];
   queue.innerHTML='';
   if (!opportunities.length) {
-    queue.innerHTML='<p class="queue-empty">Nothing saved yet.</p>';
+    queue.append(el('p','queue-empty','Nothing saved yet.'));
     return;
   }
-
   for (const item of opportunities) {
-    const card=document.createElement('article');
-    card.className='queue-item';
-    card.innerHTML=`
-      <div class="queue-score"><strong></strong><span>fit</span></div>
-      <div class="queue-main">
-        <div class="queue-top"><h3></h3><span class="status"></span></div>
-        <p></p>
-        <div class="queue-actions">
-          <button type="button" data-plan>Build plan</button>
-          <button type="button" data-submitted>Mark submitted</button>
-        </div>
-        <div class="plan hidden"></div>
-      </div>
-    `;
-    card.querySelector('.queue-score strong').textContent=item.analysis.score;
-    card.querySelector('h3').textContent=item.title;
-    card.querySelector('.status').textContent=item.status;
-    card.querySelector('p').textContent=`${item.analysis.verdict} · ${item.analysis.reward?.text ?? 'reward unknown'} · ${item.analysis.deadline ?? 'deadline unknown'}`;
-
-    card.querySelector('[data-plan]').addEventListener('click',async()=>{
-      const result=await api('/api/plan',{method:'POST',body:JSON.stringify({id:item.id})});
-      const box=card.querySelector('.plan');
-      const plan=result.plan;
-      box.classList.remove('hidden');
-      box.innerHTML='';
-      const ol=document.createElement('ol');
-      for (const step of plan.steps) {
-        const li=document.createElement('li');
-        li.textContent=step;
-        ol.append(li);
-      }
-      box.append(ol);
-    });
-
-    card.querySelector('[data-submitted]').addEventListener('click',async()=>{
-      const result=await api('/api/status',{method:'POST',body:JSON.stringify({id:item.id,status:'submitted'})});
-      renderQueue(result.queue);
-    });
-
-    queue.append(card);
+    const row=el('article','queue-item');
+    const score=el('div','queue-score');
+    score.append(el('strong','',String(item.analysis.score)),el('span','','fit'));
+    const main=el('div','queue-main');
+    const top=el('div','queue-top');
+    top.append(el('h3','',item.title),el('span','status',item.status));
+    main.append(top,el('p','',`${item.analysis.verdict} · ${item.analysis.reward?.text ?? 'reward unknown'} · ${item.analysis.deadline ?? 'deadline unknown'}`));
+    row.append(score,main);
+    queue.append(row);
   }
 }
 
 async function refreshQueue() {
-  const result=await api('/api/queue');
+  const result=await api(`/api/queue?workspace=${encodeURIComponent(workspace)}`);
   runtimeBadge.textContent='MCP · connected';
   runtimeBadge.classList.add('connected');
   renderQueue(result.queue);
 }
 
-triageButton.addEventListener('click',async()=>{
-  if (!titleInput.value.trim() || !listingInput.value.trim()) return;
-  setBusy(true);
+function currentListing() {
+  if (attachment.classList.contains('hidden')) return null;
+  const listing=listingText.value.trim();
+  if (!listing) return null;
+  return {title:listingTitle.value.trim(),listing};
+}
+
+function attach(sample) {
+  attachment.classList.remove('hidden');
+  listingTitle.value=sample?.title ?? '';
+  listingText.value=sample?.listing ?? '';
+  attachmentTitle.textContent=sample ? 'Sample listing attached' : 'Your listing';
+  if (!utteranceInput.value.trim()) utteranceInput.value='Alexa, is this worth building?';
+  (sample ? utteranceInput : listingText).focus();
+}
+
+function detach() {
+  attachment.classList.add('hidden');
+  listingTitle.value='';
+  listingText.value='';
+}
+
+async function send(utterance,{silentUser=false}={}) {
+  const listing=currentListing();
+  const text=utterance.trim() || (listing ? 'Is this worth building?' : '');
+  if (!text) return;
+  if (!silentUser) addUserTurn(text,listing);
+  sendButton.disabled=true;
   try {
-    const payload=await api('/api/triage',{
+    const payload=await api('/api/converse',{
       method:'POST',
-      body:JSON.stringify({title:titleInput.value.trim(),listing:listingInput.value.trim()})
+      body:JSON.stringify({utterance:text,workspace,...(listing??{})})
     });
-    renderResult(payload);
+    runtimeBadge.textContent='MCP · connected';
+    runtimeBadge.classList.add('connected');
+    addAssistantTurn(payload);
+    if (listing) detach();
+    await refreshQueue();
   } catch (error) {
-    nextAction.textContent=error.message;
+    addErrorTurn(error.message);
   } finally {
-    setBusy(false);
+    sendButton.disabled=false;
   }
+}
+
+composer.addEventListener('submit',(event)=>{
+  event.preventDefault();
+  userHasInteracted=true;
+  const text=utteranceInput.value;
+  utteranceInput.value='';
+  send(text);
 });
 
-for (const button of document.querySelectorAll('[data-sample]')) {
+for (const button of document.querySelectorAll('[data-say]')) {
   button.addEventListener('click',()=>{
-    const sample=samples[button.dataset.sample];
-    titleInput.value=sample.title;
-    listingInput.value=sample.listing;
+    userHasInteracted=true;
+    send(button.dataset.say);
   });
 }
 
-resetButton.addEventListener('click',async()=>{
-  await api('/api/reset',{method:'POST',body:'{}'});
-  resultState.classList.add('hidden');
-  emptyState.classList.remove('hidden');
-  runtimeBadge.textContent='MCP · waiting';
-  runtimeBadge.classList.remove('connected');
-  renderQueue({opportunities:[]});
+for (const button of document.querySelectorAll('[data-sample]')) {
+  button.addEventListener('click',()=>attach(samples[button.dataset.sample]));
+}
+$('#ownListingButton').addEventListener('click',()=>attach(null));
+$('#removeAttachment').addEventListener('click',detach);
+
+voiceToggle.addEventListener('click',()=>{
+  userHasInteracted=true;
+  voiceOn=!voiceOn;
+  storageSet('bountypilot.voice',voiceOn?'on':'off');
+  if (!voiceOn && canSpeak) speechSynthesis.cancel();
+  renderVoiceToggle();
 });
 
-refreshQueueButton.addEventListener('click',refreshQueue);
+$('#newSessionButton').addEventListener('click',()=>{
+  userHasInteracted=true;
+  transcript.innerHTML='';
+  send('Alexa, open BountyPilot');
+});
 
-refreshQueue().catch(()=>{});
+$('#resetButton').addEventListener('click',async()=>{
+  userHasInteracted=true;
+  await api('/api/reset',{method:'POST',body:JSON.stringify({workspace})});
+  transcript.innerHTML='';
+  await refreshQueue();
+  send('Alexa, open BountyPilot',{silentUser:true});
+});
+
+$('#refreshQueueButton').addEventListener('click',()=>refreshQueue().catch(()=>{}));
+
+async function boot() {
+  renderVoiceToggle();
+  try {
+    const health=await api('/health');
+    const [label,title,durable]=storageLabels[health.state] ?? [`State · ${health.state}`,'',false];
+    storageBadge.textContent=label;
+    storageBadge.title=title;
+    storageBadge.classList.toggle('connected',durable);
+    storageBadge.classList.toggle('warn',!durable);
+  } catch {
+    storageBadge.textContent='State · unknown';
+  }
+  await refreshQueue().catch(()=>{});
+  send('Alexa, open BountyPilot',{silentUser:true});
+}
+
+boot();

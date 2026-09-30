@@ -13,6 +13,18 @@ It turns bounty hunting into a stateful agent workflow instead of a one-shot Q&A
 
 The simulator invokes the same seven MCP tools through the official SDK using an in-memory MCP transport. The separately exposed `/mcp` route serves the same tool surface over Streamable HTTP for external clients and Alexa+ integration.
 
+## The Alexa+ simulation
+
+The web simulator is a multi-turn conversation, not a form:
+
+- "Alexa, open BountyPilot" — on a returning visit it greets you with your saved pipeline and the next step.
+- Attach a listing and ask "is this worth building?" — it analyzes, saves, and (for SKIP) files the listing as skipped on its own, then tells you what to do next.
+- "What should I work on today?", "What's in my queue?", "Plan my top opportunity", "I submitted it" — each maps to a short chain of MCP tool calls.
+
+Replies are read aloud with the browser's built-in speech synthesis (toggle in the header), and results come back as cards: a verdict card, a plan card, and a queue carousel. Every turn shows the MCP tool calls it made.
+
+Intent routing (`src/conversation.js`) is rule-based on purpose: every decision is explainable and the demo needs no paid model API.
+
 ## Track technology
 
 - Self-hosted MCP server
@@ -53,9 +65,18 @@ The smoke client performs a real initialize handshake, lists tools, calls `analy
 
 ## State
 
-Local demo state is stored in `data/state.json` and intentionally ignored by Git. `data/state.example.json` documents the shape.
+Each browser gets its own workspace id (kept in `localStorage`), so visitors never see each other's queue. External MCP clients pass an optional `workspace` argument; without it they use `default`.
 
-On Vercel, the demo writes state under the function's `/tmp` directory so the app can operate without a separate database. That storage is ephemeral and may reset on a cold start. Durable hosted persistence is intentionally left as a follow-up integration rather than being overstated in the PoC.
+Storage is chosen from the environment, in this order:
+
+| Environment | Storage | Survives restarts |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (or Vercel KV's `KV_REST_API_URL` + `KV_REST_API_TOKEN`) | Redis over REST | yes |
+| `BOUNTYPILOT_STATE=/path/state.json` | that file | yes |
+| running on Vercel with neither | function `/tmp` | no — may reset on a cold start |
+| local default | `data/state.json` (ignored by Git) | yes |
+
+`GET /health` reports which one is active, and the simulator shows it in the header. Files written by v0.1 (a single top-level queue) are read as the `default` workspace.
 
 ## Privacy and cost
 

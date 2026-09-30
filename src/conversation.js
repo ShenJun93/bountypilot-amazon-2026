@@ -1,0 +1,160 @@
+// Routes one spoken-style utterance to a sequence of MCP tool calls and returns
+// a short reply to read aloud plus visual cards. Intent matching is deliberately
+// rule-based: every decision is explainable and needs no paid model API.
+
+const statusIntents=[
+  [/\b(i\s+)?(just\s+)?submitted\b|\bsubmit(ted)?\s+it\b/i,'submitted'],
+  [/\bstart(ed)?\s+building\b|\bi'?m\s+building\b|\bworking\s+on\s+it\b/i,'building'],
+  [/\b(we|i)\s+won\b/i,'won'],
+  [/\b(we|i)\s+lost\b|\bdidn'?t\s+win\b/i,'lost'],
+  [/\bskip\s+(it|this|that)\b|\bnot\s+worth\s+it\b|\bdrop\s+(it|this|that)\b/i,'skipped']
+];
+
+function detectIntent(utterance,listing) {
+  if (listing) return {kind:'triage'};
+  for (const [pattern,status] of statusIntents) if (pattern.test(utterance)) return {kind:'status',status};
+  if (/\bplan\b/i.test(utterance)) return {kind:'plan'};
+  if (/\b(queue|pipeline|list|saved|what\s+do\s+i\s+have)\b/i.test(utterance)) return {kind:'queue'};
+  if (/\b(next|today|work\s+on|should\s+i|focus|priority)\b/i.test(utterance)) return {kind:'next'};
+  if (!utterance.trim() || /\b(hello|hi|hey|open|welcome|start)\b/i.test(utterance)) return {kind:'greet'};
+  return {kind:'help'};
+}
+
+function data(call) {
+  return call.response?.structuredContent ?? null;
+}
+
+function opportunityCard(analysis) {
+  return {
+    type:'opportunity',
+    title:analysis.title,
+    verdict:analysis.verdict,
+    score:analysis.score,
+    reward:analysis.reward?.text ?? null,
+    deadline:analysis.deadline ?? null,
+    liveGate:analysis.signals.liveGate,
+    preHire:analysis.signals.preHireGate,
+    reasons:analysis.reasons,
+    unknowns:analysis.unknowns
+  };
+}
+
+function queueCard(opportunities) {
+  return {
+    type:'queue',
+    items:opportunities.map((item)=>({
+      id:item.id,
+      title:item.title,
+      status:item.status,
+      verdict:item.analysis.verdict,
+      score:item.analysis.score,
+      reward:item.analysis.reward?.text ?? null,
+      deadline:item.analysis.deadline ?? null
+    }))
+  };
+}
+
+const isOpen=(item)=>!['won','lost','skipped'].includes(item.status);
+
+function mentioned(utterance,opportunities) {
+  const text=utterance.toLowerCase();
+  return opportunities.find((item)=>{
+    const words=item.title.toLowerCase().split(/[^a-z0-9]+/).filter((w)=>w.length>=4);
+    return words.some((w)=>text.includes(w));
+  }) ?? null;
+}
+
+export async function converse({utterance='',title='',listing='',workspace='default'},callTool) {
+  const trace=[];
+  const call=async(name,args={})=>{
+    const out=await callTool(name,{...args,workspace});
+    trace.push({tool:name,transport:out.transport});
+    return out;
+  };
+  const noWorkspace=async(name,args)=>{
+    const out=await callTool(name,args);
+    trace.push({tool:name,transport:out.transport});
+    return out;
+  };
+
+  const intent=detectIntent(utterance,listing.trim());
+  const cards=[];
+  let reply;
+
+  if (intent.kind==='triage') {
+    const name=title.trim() || listing.trim().split(/[.\n]/)[0].slice(0,80) || 'Untitled opportunity';
+    const analysis=data(await noWorkspace('analyze_opportunity',{title:name,listing})).analysis;
+    const saved=data(await call('save_opportunity',{title:name,listing}));
+    cards.push(opportunityCard(analysis));
+    const reward=analysis.reward?.text ?? 'no stated reward';
+    const deadline=analysis.deadline ? `the deadline is ${analysis.deadline}` : 'no deadline is stated';
+
+    if (analysis.verdict==='SKIP') {
+      await call('set_opportunity_status',{id:saved.id,status:'skipped'});
+      reply=`I'd skip this one. ${analysis.reasons[0] ?? ''} I saved it as skipped so it won't come back as a suggestion.`;
+    } else {
+      const next=data(await call('next_best_action'));
+      if (analysis.verdict==='GO') {
+        reply=`That one fits. It pays ${reward}, ${deadline}, and I found no interview gate. I saved it. Your next step: ${next.nextAction}`;
+      } else {
+        const blocker=analysis.signals.preHireGate
+          ? 'You have to be selected or hired before you can start.'
+          : (analysis.unknowns[0] ?? 'Something needs checking first.');
+        reply=`Maybe. ${blocker} I saved it so we can come back to it. Your top priority is still ${next.opportunity.title}.`;
+      }
+    }
+    return {intent:intent.kind,reply:reply.replace(/\s+/g,' ').trim(),cards,trace};
+  }
+
+  const queue=data(await call('get_opportunity_queue')).opportunities;
+  const open=queue.filter(isOpen);
+
+  if (intent.kind==='status' || intent.kind==='plan') {
+    const target=mentioned(utterance,queue) ?? open[0];
+    if (!target) {
+      reply='Your queue is empty. Paste a listing and ask me whether it is worth building.';
+    } else if (intent.kind==='status') {
+      await call('set_opportunity_status',{id:target.id,status:intent.status});
+      const next=data(await call('next_best_action'));
+      cards.push({type:'status',title:target.title,status:intent.status});
+      reply=`Got it, ${target.title} is now ${intent.status}.`;
+      if (next.opportunity) reply+=` Next up: ${next.opportunity.title}. ${next.nextAction}`;
+    } else {
+      const plan=data(await call('build_submission_plan',{id:target.id}));
+      cards.push({type:'plan',title:plan.title,status:plan.status,steps:plan.steps});
+      reply=`Here is the plan for ${plan.title}. First: ${plan.steps[0]}`;
+    }
+    return {intent:intent.kind,reply,cards,trace};
+  }
+
+  if (intent.kind==='queue') {
+    cards.push(queueCard(queue));
+    reply=open.length
+      ? `You have ${open.length} open ${open.length===1?'opportunity':'opportunities'}. The best fit is ${open[0].title}.`
+      : 'Nothing open in your queue right now.';
+    return {intent:intent.kind,reply,cards,trace};
+  }
+
+  if (intent.kind==='next' || intent.kind==='greet') {
+    const next=data(await call('next_best_action'));
+    if (!next.opportunity) {
+      reply=intent.kind==='greet'
+        ? "Hi, I'm BountyPilot. Paste a bounty or hackathon listing and ask me whether it's worth building."
+        : 'Your queue is empty. Paste a listing and ask me whether it is worth building.';
+    } else {
+      const lead=intent.kind==='greet'
+        ? `Welcome back. You have ${open.length} open ${open.length===1?'opportunity':'opportunities'}. `
+        : '';
+      reply=`${lead}Your best open opportunity is ${next.opportunity.title}, currently ${next.opportunity.status}. Next: ${next.nextAction}`;
+      cards.push(queueCard(open));
+    }
+    return {intent:intent.kind,reply,cards,trace};
+  }
+
+  return {
+    intent:'help',
+    reply:'I can check whether a listing is worth building, show your queue, plan your top opportunity, or record that you started, submitted, won or lost it.',
+    cards,
+    trace
+  };
+}

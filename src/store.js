@@ -1,6 +1,5 @@
-import {mkdir, readFile, writeFile} from 'node:fs/promises';
-import {dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {assertWorkspace} from './backends.js';
 
 const defaultProfile={
   name:'Solo Builder',
@@ -11,73 +10,72 @@ const defaultProfile={
   ]
 };
 
-async function ensureState(filePath) {
-  await mkdir(dirname(filePath),{recursive:true});
-  try {
-    return JSON.parse(await readFile(filePath,'utf8'));
-  } catch (error) {
-    if (error?.code!=='ENOENT') throw error;
-    const state={profile:defaultProfile,opportunities:[]};
-    await writeFile(filePath,JSON.stringify(state,null,2));
-    return state;
-  }
-}
+const terminal=['won','lost','skipped'];
 
-async function saveState(filePath,state) {
-  await writeFile(filePath,JSON.stringify(state,null,2));
+function emptyState() {
+  return {profile:defaultProfile,opportunities:[]};
 }
 
 export class OpportunityStore {
-  constructor(filePath) {
-    this.filePath=filePath;
+  constructor(backend,workspace='default') {
+    this.backend=backend;
+    this.workspace=assertWorkspace(workspace);
+  }
+
+  get storageKind() {
+    return this.backend.kind;
+  }
+
+  forWorkspace(workspace) {
+    return new OpportunityStore(this.backend,workspace);
+  }
+
+  async #state() {
+    return (await this.backend.load(this.workspace)) ?? emptyState();
+  }
+
+  async #save(state) {
+    await this.backend.save(this.workspace,state);
   }
 
   async getProfile() {
-    return (await ensureState(this.filePath)).profile;
+    return (await this.#state()).profile;
   }
 
   async saveOpportunity({title,listing,sourceUrl=null,analysis}) {
-    const state=await ensureState(this.filePath);
-    const item={
-      id:randomUUID(),
-      title,
-      listing,
-      sourceUrl,
-      analysis,
-      status:'candidate',
-      createdAt:new Date().toISOString(),
-      updatedAt:new Date().toISOString()
-    };
+    const state=await this.#state();
+    const now=new Date().toISOString();
+    const item={id:randomUUID(),title,listing,sourceUrl,analysis,status:'candidate',createdAt:now,updatedAt:now};
     state.opportunities.push(item);
-    await saveState(this.filePath,state);
+    await this.#save(state);
     return item;
   }
 
   async list() {
-    const state=await ensureState(this.filePath);
+    const state=await this.#state();
     return [...state.opportunities].sort((a,b)=>{
-      const active=(x)=>['won','lost','skipped'].includes(x.status)?1:0;
-      return active(a)-active(b) || (b.analysis?.score??0)-(a.analysis?.score??0);
+      const inactive=(x)=>terminal.includes(x.status)?1:0;
+      return inactive(a)-inactive(b) || (b.analysis?.score??0)-(a.analysis?.score??0);
     });
   }
 
   async get(id) {
-    return (await ensureState(this.filePath)).opportunities.find((item)=>item.id===id) ?? null;
+    return (await this.#state()).opportunities.find((item)=>item.id===id) ?? null;
   }
 
   async updateStatus(id,status) {
-    const state=await ensureState(this.filePath);
+    const state=await this.#state();
     const item=state.opportunities.find((entry)=>entry.id===id);
     if (!item) return null;
     item.status=status;
     item.updatedAt=new Date().toISOString();
-    await saveState(this.filePath,state);
+    await this.#save(state);
     return item;
   }
 
   async reset() {
-    const state={profile:defaultProfile,opportunities:[]};
-    await saveState(this.filePath,state);
+    const state=emptyState();
+    await this.#save(state);
     return state;
   }
 }
