@@ -95,12 +95,15 @@ export async function converse({utterance='',title='',listing='',workspace='defa
     } else {
       const next=data(await call('next_best_action'));
       if (analysis.verdict==='GO') {
-        reply=`That one fits. It pays ${reward}, ${deadline}, and I found no interview gate. I saved it. Your next step: ${next.nextAction}`;
+        const step=next.opportunity?.id===saved.id ? next.nextAction : null;
+        reply=`That one fits. It pays ${reward}, ${deadline}, and I found no interview gate. I saved it.`;
+        reply+=step ? ` Your next step: ${step}` : ' Say "plan my top opportunity" when you are ready to start.';
       } else {
         const blocker=analysis.signals.preHireGate
           ? 'You have to be selected or hired before you can start.'
           : (analysis.unknowns[0] ?? 'Something needs checking first.');
-        reply=`Maybe. ${blocker} I saved it so we can come back to it. Your top priority is still ${next.opportunity.title}.`;
+        reply=`Maybe. ${blocker} I saved it so we can come back to it.`;
+        if (next.opportunity && next.opportunity.id!==saved.id) reply+=` Your top priority is still ${next.opportunity.title}.`;
       }
     }
     return {intent:intent.kind,reply:reply.replace(/\s+/g,' ').trim(),cards,trace};

@@ -78,6 +78,21 @@ test('Redis REST backend sends GET/SET commands and round-trips state',async()=>
   assert.deepEqual(calls[1].body.slice(0,2),['SET','bountypilot:ws:ws1']);
 });
 
+test('Redis REST backend echoes the Upstash sync token for read-your-writes',async()=>{
+  const seen=[];
+  let n=0;
+  const fetchImpl=async(_url,init)=>{
+    seen.push(init.headers['upstash-sync-token'] ?? null);
+    n+=1;
+    return {ok:true,headers:{get:(h)=>h==='upstash-sync-token'?`tok-${n}`:null},json:async()=>({result:null})};
+  };
+  const backend=new RedisRestBackend({url:'https://x',token:'t',fetchImpl});
+  await backend.save('ws',{opportunities:[]});
+  await backend.load('ws');
+  await backend.load('ws');
+  assert.deepEqual(seen,[null,'tok-1','tok-2']);
+});
+
 test('Redis REST backend surfaces errors instead of returning empty state',async()=>{
   const fetchImpl=async()=>({ok:false,status:401,json:async()=>({error:'WRONGPASS'})});
   const backend=new RedisRestBackend({url:'https://x',token:'bad',fetchImpl});

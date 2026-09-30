@@ -63,12 +63,14 @@ export class RedisRestBackend {
     this.fetch=fetchImpl;
   }
 
+  #syncToken=null;
+
   async #command(args) {
-    const response=await this.fetch(this.url,{
-      method:'POST',
-      headers:{authorization:`Bearer ${this.token}`,'content-type':'application/json'},
-      body:JSON.stringify(args)
-    });
+    const headers={authorization:`Bearer ${this.token}`,'content-type':'application/json'};
+    // Upstash may serve a read from a replica; echoing the last sync token gives read-your-writes.
+    if (this.#syncToken) headers['upstash-sync-token']=this.#syncToken;
+    const response=await this.fetch(this.url,{method:'POST',headers,body:JSON.stringify(args)});
+    this.#syncToken=response.headers?.get?.('upstash-sync-token') ?? this.#syncToken;
     const body=await response.json();
     if (!response.ok || body.error) throw new Error(`Redis REST error: ${body.error ?? response.status}`);
     return body.result;
