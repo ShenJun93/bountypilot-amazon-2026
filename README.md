@@ -71,7 +71,7 @@ Storage is chosen from the environment, in this order:
 
 | Environment | Storage | Survives restarts |
 |---|---|---|
-| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (or Vercel KV's `KV_REST_API_URL` + `KV_REST_API_TOKEN`) | Redis over REST | yes |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, or the Vercel Upstash integration's `…KV_REST_API_URL` + `…KV_REST_API_TOKEN` (any prefix, e.g. `kv_KV_REST_API_URL`) | Redis over REST | yes |
 | `BOUNTYPILOT_STATE=/path/state.json` | that file | yes |
 | running on Vercel with neither | function `/tmp` | no — may reset on a cold start |
 | local default | `data/state.json` (ignored by Git) | yes |

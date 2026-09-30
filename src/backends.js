@@ -84,10 +84,22 @@ export class RedisRestBackend {
   }
 }
 
+// Vercel's Upstash integration prepends a user-chosen prefix, e.g. kv_KV_REST_API_URL.
+function redisRestCredentials(env) {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    return {url:env.UPSTASH_REDIS_REST_URL,token:env.UPSTASH_REDIS_REST_TOKEN};
+  }
+  for (const key of Object.keys(env).sort()) {
+    if (!key.endsWith('KV_REST_API_URL')) continue;
+    const token=env[key.slice(0,-'URL'.length)+'TOKEN'];
+    if (env[key] && token) return {url:env[key],token};
+  }
+  return null;
+}
+
 export function backendFromEnv(env,{defaultFile,isVercel,tmpFile}) {
-  const url=env.UPSTASH_REDIS_REST_URL ?? env.KV_REST_API_URL;
-  const token=env.UPSTASH_REDIS_REST_TOKEN ?? env.KV_REST_API_TOKEN;
-  if (url && token) return new RedisRestBackend({url,token});
+  const redis=redisRestCredentials(env);
+  if (redis) return new RedisRestBackend(redis);
   if (env.BOUNTYPILOT_STATE) return new FileBackend(env.BOUNTYPILOT_STATE);
   if (isVercel) return new FileBackend(tmpFile,{kind:'ephemeral-vercel-tmp'});
   return new FileBackend(defaultFile);

@@ -88,6 +88,14 @@ test('backend selection prefers Redis, then an explicit file, then Vercel tmp',(
   const opts={isVercel:true,defaultFile:'/d.json',tmpFile:'/tmp/t.json'};
   assert.equal(backendFromEnv({KV_REST_API_URL:'https://kv',KV_REST_API_TOKEN:'t'},opts).kind,'redis-durable');
   assert.equal(backendFromEnv({UPSTASH_REDIS_REST_URL:'https://u',UPSTASH_REDIS_REST_TOKEN:'t'},opts).kind,'redis-durable');
+  const prefixed=backendFromEnv({
+    kv_KV_REST_API_URL:'https://p.upstash.io',
+    kv_KV_REST_API_TOKEN:'rw',
+    kv_KV_REST_API_READ_ONLY_TOKEN:'ro'
+  },opts);
+  assert.equal(prefixed.kind,'redis-durable');
+  assert.equal(prefixed.token,'rw');
+  assert.equal(backendFromEnv({kv_KV_REST_API_URL:'https://p'},opts).kind,'ephemeral-vercel-tmp');
   assert.equal(backendFromEnv({BOUNTYPILOT_STATE:'/s.json'},opts).filePath,'/s.json');
   assert.equal(backendFromEnv({},opts).kind,'ephemeral-vercel-tmp');
   assert.equal(backendFromEnv({},{...opts,isVercel:false}).kind,'local-file');
