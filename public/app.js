@@ -162,14 +162,19 @@ function renderBriefingCard(card) {
   box.append(head);
 
   const list=el('ol','briefing-list');
-  for (const item of card.items) {
-    const li=el('li','briefing-item');
-    const title=el('strong','',item.title);
-    const meta=el('span','briefing-meta',`${item.score}/100 Â· ${item.status} Â· ${item.reward ?? 'reward unknown'} Â· ${item.deadline ?? 'deadline unknown'}`);
-    const next=el('span','briefing-next',`Next: ${item.nextAction}`);
-    li.append(title,meta,next);
-    if (item.blocker) li.append(el('span','briefing-blocker',`Watch: ${item.blocker}`));
-    list.append(li);
+  const items=card.items ?? [];
+  if (!items.length) {
+    list.append(el('li','briefing-empty','Nothing actionable right now.'));
+  } else {
+    for (const item of items) {
+      const li=el('li','briefing-item');
+      const title=el('strong','',item.title);
+      const meta=el('span','briefing-meta',`${item.score}/100 Â· ${item.status} Â· ${item.reward ?? 'reward unknown'} Â· ${item.deadline ?? 'deadline unknown'}`);
+      const next=el('span','briefing-next',`Next: ${item.nextAction}`);
+      li.append(title,meta,next);
+      if (item.blocker) li.append(el('span','briefing-blocker',`Watch: ${item.blocker}`));
+      list.append(li);
+    }
   }
   box.append(list);
   return box;
@@ -192,7 +197,15 @@ function addAssistantTurn(payload) {
   const bubble=el('div','bubble');
   bubble.append(el('span','orb small'),el('p','',payload.reply));
   turn.append(bubble);
-  for (const card of payload.cards ?? []) turn.append(renderers[card.type](card));
+  for (const card of payload.cards ?? []) {
+    const renderer=renderers[card.type];
+    if (!renderer) continue;
+    try {
+      turn.append(renderer(card));
+    } catch (err) {
+      turn.append(el('p','bubble error',`Card render error (${card.type}): ${err.message}`));
+    }
+  }
 
   if (payload.trace?.length) {
     const details=el('details','trace');
