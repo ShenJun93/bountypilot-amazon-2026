@@ -139,16 +139,25 @@ export async function converse({utterance='',title='',listing='',workspace='defa
     return {intent:intent.kind,reply,cards,trace};
   }
 
-  if (intent.kind==='next' || intent.kind==='greet') {
+  if (intent.kind==='next') {
+    const briefing=data(await call('daily_briefing',{limit:3}));
+    if (!briefing.priorities.length) {
+      reply='Your queue is empty. Paste a listing and ask me whether it is worth building.';
+    } else {
+      const [first,second]=briefing.priorities;
+      reply=`Today's focus is ${first.title}, currently ${first.status}. Next: ${first.nextAction}`;
+      if (second) reply+=` Second priority: ${second.title}.`;
+      cards.push({type:'briefing',activeCount:briefing.activeCount,items:briefing.priorities});
+    }
+    return {intent:intent.kind,reply,cards,trace};
+  }
+
+  if (intent.kind==='greet') {
     const next=data(await call('next_best_action'));
     if (!next.opportunity) {
-      reply=intent.kind==='greet'
-        ? "Hi, I'm BountyPilot. Paste a bounty or hackathon listing and ask me whether it's worth building."
-        : 'Your queue is empty. Paste a listing and ask me whether it is worth building.';
+      reply="Hi, I'm BountyPilot. Paste a bounty or hackathon listing and ask me whether it's worth building.";
     } else {
-      const lead=intent.kind==='greet'
-        ? `Welcome back. You have ${open.length} open ${open.length===1?'opportunity':'opportunities'}. `
-        : '';
+      const lead=`Welcome back. You have ${open.length} open ${open.length===1?'opportunity':'opportunities'}. `;
       reply=`${lead}Your best open opportunity is ${next.opportunity.title}, currently ${next.opportunity.status}. Next: ${next.nextAction}`;
       cards.push(queueCard(open));
     }
