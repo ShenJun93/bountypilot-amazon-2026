@@ -19,6 +19,26 @@ function notFound() {
   return {content:[{type:'text',text:'Opportunity not found'}],isError:true};
 }
 
+function briefingItem(item) {
+  const plan=buildSubmissionPlan(item);
+  let blocker=null;
+  if (item.analysis.signals.liveGate) blocker='Mandatory live/interview gate';
+  else if (item.analysis.signals.preHireGate) blocker='Pre-hire or assignment gate';
+  else if (item.analysis.unknowns?.length) blocker=item.analysis.unknowns[0];
+
+  return {
+    id:item.id,
+    title:item.title,
+    status:item.status,
+    verdict:item.analysis.verdict,
+    score:item.analysis.score,
+    reward:item.analysis.reward?.text ?? null,
+    deadline:item.analysis.deadline ?? null,
+    blocker,
+    nextAction:plan[0] ?? 'Review the opportunity manually.'
+  };
+}
+
 export function buildMcpServer(store) {
   const scoped=(id)=>store.forWorkspace(id ?? 'default');
   const server=new McpServer(
@@ -117,6 +137,29 @@ export function buildMcpServer(store) {
       const item=await scoped(ws).updateStatus(id,status);
       if (!item) return notFound();
       return result({id:item.id,title:item.title,status:item.status,updatedAt:item.updatedAt});
+    }
+  );
+
+  server.registerTool(
+    'daily_briefing',
+    {
+      description:'Return the top active opportunities for today with reward, deadline, blocker, status, fit score, and one concrete next action for each.',
+      inputSchema:z.object({
+        workspace,
+        limit:z.number().int().min(1).max(5).default(3)
+      })
+    },
+    async ({workspace:ws,limit})=>{
+      const items=await scoped(ws).list();
+      const open=items.filter((item)=>!['won','lost','skipped'].includes(item.status));
+      const actionable=[
+        ...open.filter((item)=>item.status!=='submitted'),
+        ...open.filter((item)=>item.status==='submitted')
+      ];
+      return result({
+        activeCount:open.length,
+        priorities:actionable.slice(0,limit).map(briefingItem)
+      });
     }
   );
 

@@ -100,3 +100,23 @@ test('unknown requests get a help reply',async()=>{
   const out=await converse({utterance:'sing me a song',workspace:'w1'},call);
   assert.equal(out.intent,'help');
 });
+test('daily briefing prioritizes actionable work ahead of submitted work',async()=>{
+  const {call}=setup();
+  await converse({title:'Big Prize',listing:GO,workspace:'w1'},call);
+  await converse({
+    title:'Smaller Async',
+    listing:'$500 cash prize. Deadline: October 20, 2026. No interview required. Submit a GitHub repository and demo video.',
+    workspace:'w1'
+  },call);
+
+  await converse({utterance:'I submitted the big prize one',workspace:'w1'},call);
+  const out=await converse({utterance:'What should I work on today?',workspace:'w1'},call);
+
+  assert.equal(out.intent,'next');
+  assert.deepEqual(out.trace.map((step)=>step.tool),['get_opportunity_queue','daily_briefing']);
+  assert.equal(out.cards[0].type,'briefing');
+  assert.equal(out.cards[0].activeCount,2);
+  assert.equal(out.cards[0].items[0].title,'Smaller Async');
+  assert.equal(out.cards[0].items[1].title,'Big Prize');
+  assert.match(out.reply,/Today's focus is Smaller Async/);
+});

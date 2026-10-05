@@ -9,9 +9,10 @@ It turns bounty hunting into a stateful agent workflow instead of a one-shot Q&A
 3. compare opportunities without hiding blockers;
 4. build a concrete submission plan;
 5. track progress across sessions;
-6. ask for the next best action.
+6. ask for the next best action;
+7. get a daily priority briefing across the active queue.
 
-The simulator invokes the same seven MCP tools through the official SDK using an in-memory MCP transport. The separately exposed `/mcp` route serves the same tool surface over Streamable HTTP for external clients and Alexa+ integration.
+The simulator invokes the same eight MCP tools through the official SDK using an in-memory MCP transport. The separately exposed `/mcp` route serves the same tool surface over Streamable HTTP for external clients and Alexa+ integration.
 
 ## The Alexa+ simulation
 
@@ -21,7 +22,7 @@ The web simulator is a multi-turn conversation, not a form:
 - Attach a listing and ask "is this worth building?" — it analyzes, saves, and (for SKIP) files the listing as skipped on its own, then tells you what to do next.
 - "What should I work on today?", "What's in my queue?", "Plan my top opportunity", "I submitted it" — each maps to a short chain of MCP tool calls.
 
-Replies are read aloud with the browser's built-in speech synthesis (toggle in the header), and results come back as cards: a verdict card, a plan card, and a queue carousel. Every turn shows the MCP tool calls it made.
+Replies are read aloud with the browser's built-in speech synthesis (toggle in the header), and results come back as cards: a verdict card, a daily briefing card, a plan card, and a queue carousel. Every turn shows the MCP tool calls it made.
 
 Intent routing (`src/conversation.js`) is rule-based on purpose: every decision is explainable and the demo needs no paid model API.
 
@@ -32,7 +33,7 @@ Intent routing (`src/conversation.js`) is rule-based on purpose: every decision 
 - MCP TypeScript SDK v2
 - Verified negotiated protocol version: `2026-07-28` (newer than the hackathon minimum `2025-11-25`)
 - Web simulator uses an MCP client over the SDK's in-memory transport; it does not bypass the MCP tool layer
-- Public `/mcp` uses Streamable HTTP and exposes the same seven tools
+- Public `/mcp` uses Streamable HTTP and exposes the same eight tools
 
 ## Run
 
@@ -51,7 +52,7 @@ With the server running:
 npm run smoke
 ```
 
-The smoke client performs a real initialize handshake, lists tools, calls `analyze_opportunity`, and prints the negotiated protocol era.
+The smoke client performs a real initialize handshake, requires the full eight-tool surface, calls `analyze_opportunity` and `daily_briefing`, and exits non-zero if protocol/tool/runtime checks fail.
 
 ## Tools
 
@@ -61,6 +62,7 @@ The smoke client performs a real initialize handshake, lists tools, calls `analy
 - `compare_opportunities`
 - `build_submission_plan`
 - `set_opportunity_status`
+- `daily_briefing`
 - `next_best_action`
 
 ## State

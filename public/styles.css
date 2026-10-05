@@ -149,5 +149,11 @@ details.trace em{font-style:normal;color:#58cdbf;margin-left:8px}
 .workspace{margin-top:16px;border-top:1px solid #1a2d39;padding-top:12px;font-size:.74rem;color:#7890a0;line-height:1.5}
 .workspace p{margin:0 0 6px}
 .workspace code{color:#9fd;background:#0b1c27;border-radius:6px;padding:1px 5px}
+.briefing-list{display:grid;gap:9px;margin:0;padding-left:18px}
+.briefing-item{padding:9px 0}
+.briefing-item>strong,.briefing-meta,.briefing-next,.briefing-blocker{display:block}
+.briefing-meta{margin-top:3px;color:#7d94a4;font-size:.7rem}
+.briefing-next{margin-top:5px;color:#dbe8ee;font-size:.76rem;line-height:1.4}
+.briefing-blocker{margin-top:4px;color:#ffd472;font-size:.68rem}
 @media(max-width:860px){.grid{grid-template-columns:1fr}.hero{padding-top:44px}.response{min-height:460px}}
 @media(max-width:560px){.shell{width:min(100% - 20px,1180px)}.panel{padding:16px}.facts{grid-template-columns:1fr}footer{flex-direction:column}.topbar{align-items:flex-start}.queue-item{grid-template-columns:52px 1fr}}
