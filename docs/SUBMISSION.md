@@ -41,8 +41,7 @@ This is intentionally more than a single-turn Q&A flow: the queue and status mod
 - Official MCP TypeScript SDK v2.
 - Negotiated production protocol version: `2026-07-28`.
 - Hackathon minimum being verified against: `2025-11-25`.
-- **Production currently exposes the original seven-tool surface** until the optimized candidate is deployed.
-- **Local optimized candidate exposes eight MCP tools**:
+- **Production exposes eight MCP tools** (promoted from commit `9f4b710` on 2026-10-05 and re-verified with `mcp-protocol-proof` v0.2):
   - `analyze_opportunity`
   - `save_opportunity`
   - `get_opportunity_queue`
@@ -52,7 +51,7 @@ This is intentionally more than a single-turn Q&A flow: the queue and status mod
   - `daily_briefing`
   - `next_best_action`
 
-The web simulator uses the same candidate tool definitions through the official MCP client and SDK `InMemoryTransport`. After deployment, the public `/mcp` endpoint must be re-verified before the Devpost copy is changed from seven to eight tools.
+The web simulator uses the same tool definitions through the official MCP client and SDK `InMemoryTransport`. The public `/mcp` endpoint exposes the same eight tools over Streamable HTTP; receipt: `docs/receipts/mcp-protocol-proof-v0.2-production-2026-10-05.json`.
 
 ## Public links
 
@@ -174,9 +173,10 @@ These local results must be repeated against production after deployment before 
 
 ## Verification receipts
 
-- Existing production MCP negotiated protocol: `2026-07-28`.
-- Existing production tool surface: 7 tools.
-- Existing production `analyze_opportunity`: GO, score 98 on the smoke fixture.
+- Production MCP negotiated protocol: `2026-07-28` (minimum `2025-11-25`).
+- Production tool surface: **8 tools**, `daily_briefing` present, state `redis-durable`.
+- Production receipt: `docs/receipts/mcp-protocol-proof-v0.2-production-2026-10-05.json` — PASS.
+- Production `analyze_opportunity`: GO, score 98 on the smoke fixture.
 - Optimized candidate unit/integration tests: **23/23 PASS**.
 - Optimized local MCP smoke: **8/8 tools / PASS**.
 - Local verifier v0.2 tests: **7/7 PASS**.
@@ -195,7 +195,7 @@ The Devpost entry is already submitted as submission **1204416**. The following 
 - [x] Publish v0.2 on public branch `work/mcp-protocol-proof-v0.2-public`; tip `cb6e96c...`.
 - [x] Run genuine Kiro Crew v0.7.2 workflow and capture evidence; TaskRunner completed 11/11 PASS.
 - [x] Publish optimized BountyPilot feature branch and verify protected preview with 8 MCP tools.
-- [ ] Re-run production smoke and verifier against the deployed eight-tool endpoint.
+- [x] Promote the eight-tool build to production and re-run the verifier against it (PASS, 2026-10-05).
 - [ ] Capture/publish updated demo under explicit approval.
 - [ ] Audit all three friction logs in the actual Devpost fields.
 - [ ] Preview and explicitly approve any Devpost edit before saving.

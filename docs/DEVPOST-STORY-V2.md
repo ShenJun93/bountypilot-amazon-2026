@@ -42,7 +42,7 @@ Every analyzed opportunity becomes durable workflow state.
 
 ### Daily Briefing
 
-The reviewed repository candidate adds an eighth MCP tool: `daily_briefing`.
+BountyPilot adds an eighth MCP tool: `daily_briefing`.
 
 Ask:
 
@@ -75,7 +75,7 @@ The web simulator shows the MCP tool trace for each turn so the workflow remains
 
 BountyPilot uses the official MCP TypeScript SDK and Streamable HTTP at `/mcp`.
 
-The reviewed candidate exposes eight tools:
+The hosted production endpoint exposes eight tools, verified with `mcp-protocol-proof` v0.2:
 
 1. `analyze_opportunity`
 2. `save_opportunity`
@@ -147,7 +147,7 @@ A malformed briefing card should not break the whole simulator. Kiro Crew helped
 
 - A genuinely stateful workflow instead of a single-turn chatbot.
 - A Daily Briefing that converts memory into action.
-- Eight MCP tools in the reviewed repository candidate.
+- Eight MCP tools on the live production endpoint, independently verified.
 - **23/23** BountyPilot tests passing.
 - A public protocol-proof companion project with **7/7** tests.
 - A documented Kiro Crew workflow with **11/11** TaskRunner steps passed.
@@ -174,5 +174,4 @@ A useful agent also needs to know what happens next. Persisting the queue was im
 - Primary track: Alexa+.
 - AWS Builder: supported by documented Kiro Crew usage.
 - Open Source: supported by public `mcp-protocol-proof` v0.2 contribution.
-- The reviewed repository candidate has eight tools.
-- Do **not** claim the currently published production endpoint has eight tools until production is actually promoted and re-verified.
+- Production was promoted to the eight-tool build on 2026-10-05 and re-verified (receipt: `docs/receipts/mcp-protocol-proof-v0.2-production-2026-10-05.json`).
