@@ -32,7 +32,7 @@ The same tool surface is used by the web simulator through the official SDK and 
 
 mcp-protocol-proof v0.2 upgrades the companion project from a one-off verifier into a CI-oriented compatibility proof tool.
 
-v0.2 adds bounded timeouts, deterministic receipt schema `mcp-protocol-proof/v1`, `--output` JSON artifact support, stable exit codes, missing-tool checks, a GitHub Actions recipe, and failure-path tests. Its local branch `work/mcp-protocol-proof-v0.2` is at commit `03a96cf` and **7/7 tests PASS**.
+v0.2 adds bounded timeouts, deterministic receipt schema `mcp-protocol-proof/v1`, `--output` JSON artifact support, stable exit codes, missing-tool checks, a GitHub Actions recipe, and failure-path tests. The original nested prototype `03a96cf` is superseded. The canonical public-history candidate is `E:\\Projects\\mcp-protocol-proof-public-v0.2`, branch `work/mcp-protocol-proof-v0.2-public`, commit `411869d9d57604fbb26119ff6002f392326920f6`, based directly on submitted public commit `ecd8552c...`, with **7/7 tests PASS**.
 
 Do not replace the submitted contribution commit URL until the v0.2 branch is pushed and a new public commit exists.
 

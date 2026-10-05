@@ -16,8 +16,9 @@ Primary repo:
 Open-source companion:
 - submitted public repo: `https://github.com/ShenJun93/mcp-protocol-proof`
 - submitted public commit: `ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba`
-- local v0.2 candidate: commit `03a96cf`, **7/7 PASS**
-- local nested history is not the same history as the public GitHub repo, so it must not be blindly pushed.
+- superseded prototype: nested local commit `03a96cf`, **7/7 PASS**; do not push this history.
+- canonical push candidate: `E:\\Projects\\mcp-protocol-proof-public-v0.2`, branch `work/mcp-protocol-proof-v0.2-public`, commit `411869d9d57604fbb26119ff6002f392326920f6`, **7/7 PASS**.
+- canonical candidate is a direct child of the submitted public commit `ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba`, so no history rewrite or force push is needed.
 
 AWS Builder:
 - current Devpost choice: **No**
