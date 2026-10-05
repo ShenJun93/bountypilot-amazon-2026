@@ -1,6 +1,6 @@
 # BountyPilot — Submission Pack
 
-Status: ready for final demo capture and Devpost form entry.
+Status: **SUBMITTED / LOCAL PRIZE-OPTIMIZATION CANDIDATE READY / EXTERNAL UPDATE NOT YET PUBLISHED.**
 
 ## Primary track
 
@@ -28,9 +28,10 @@ A user can paste a bounty or hackathon listing into the simulator. BountyPilot:
 4. preserves reward, deadline, live-gate, pre-hire, and unknown evidence;
 5. builds a concrete submission plan;
 6. tracks lifecycle state such as candidate, building, submitted, won, lost, or skipped;
-7. returns the next best action in a later session.
+7. returns the next best action in a later session;
+8. turns the active queue into a Daily Briefing with reward/deadline evidence, blockers, lifecycle state, and one concrete next action per priority.
 
-This is intentionally more than a single-turn Q&A flow: the queue and status model preserve execution context.
+This is intentionally more than a single-turn Q&A flow: the queue and status model preserve execution context across sessions and the Daily Briefing converts that state into an execution-oriented morning workflow.
 
 ## Alexa+ / MCP implementation
 
@@ -40,16 +41,18 @@ This is intentionally more than a single-turn Q&A flow: the queue and status mod
 - Official MCP TypeScript SDK v2.
 - Negotiated production protocol version: `2026-07-28`.
 - Hackathon minimum being verified against: `2025-11-25`.
-- Seven MCP tools:
+- **Production currently exposes the original seven-tool surface** until the optimized candidate is deployed.
+- **Local optimized candidate exposes eight MCP tools**:
   - `analyze_opportunity`
   - `save_opportunity`
   - `get_opportunity_queue`
   - `compare_opportunities`
   - `build_submission_plan`
   - `set_opportunity_status`
+  - `daily_briefing`
   - `next_best_action`
 
-The web simulator uses the same seven tool definitions through the official MCP client and SDK `InMemoryTransport`. The public `/mcp` endpoint independently exposes that tool surface over Streamable HTTP.
+The web simulator uses the same candidate tool definitions through the official MCP client and SDK `InMemoryTransport`. After deployment, the public `/mcp` endpoint must be re-verified before the Devpost copy is changed from seven to eight tools.
 
 ## Public links
 
@@ -71,20 +74,32 @@ Contribution type: new additional open-source project created during the hackath
 
 `mcp-protocol-proof` is a narrow CLI that performs a real MCP Streamable HTTP initialize handshake, reports the negotiated protocol version and tool list, compares the result with a required minimum protocol date, optionally checks expected tool names, and exits non-zero when the proof fails.
 
+The **submitted public contribution remains v0.1 at commit `ecd8552c...`**. A local v0.2 candidate has been prepared with bounded timeouts, stable exit codes, JSON receipt output, CI examples, and stronger failure-path tests. Do not claim v0.2 publicly until it is reconciled onto the public repository history and pushed.
+
 ### Why it matters
 
 Protocol compatibility is a runtime property. The CLI gives developers and reviewers stronger evidence than a README statement and directly addresses the practical problem of proving that a self-hosted MCP endpoint meets a minimum protocol requirement.
 
 ### Verified use against BountyPilot
 
-The CLI was run against the production BountyPilot MCP endpoint and returned:
-
+**Current production truth** from the already-published build:
 - minimum protocol: `2025-11-25`
 - negotiated protocol: `2026-07-28`
 - protocol era: `modern`
 - tool count: 7
 - missing required tools: 0
 - result: PASS
+
+**Optimized local candidate truth**:
+- main test suite: **19/19 PASS**;
+- protocol: `2026-07-28` / `modern`;
+- tool count: **8**;
+- `daily_briefing` present;
+- analyzer smoke: `GO / 98`;
+- `bountypilot-smoke/v2`: PASS;
+- independent `mcp-protocol-proof/v1` local receipt: PASS, 0 missing tools.
+
+These local results must be repeated against production after deployment before updating the live Devpost technical claims.
 
 ## Product feedback
 
@@ -158,17 +173,30 @@ The CLI was run against the production BountyPilot MCP endpoint and returned:
 
 ## Verification receipts
 
-- Unit tests: 4/4 PASS.
-- Production MCP negotiated protocol: `2026-07-28`.
-- Production MCP tools/list: 7 tools.
-- Production `analyze_opportunity`: GO, score 98 on the smoke fixture.
+- Existing production MCP negotiated protocol: `2026-07-28`.
+- Existing production tool surface: 7 tools.
+- Existing production `analyze_opportunity`: GO, score 98 on the smoke fixture.
+- Optimized candidate unit/integration tests: **19/19 PASS**.
+- Optimized local MCP smoke: **8/8 tools / PASS**.
+- Local verifier v0.2 tests: **7/7 PASS**.
+- Local verifier receipt: `docs/receipts/mcp-protocol-proof-v0.2-local.json`.
 - Public GitHub primary repo license: MIT detected.
 - Public GitHub Open Source companion repo license: MIT detected.
 
-## Remaining before final submit
+## Current submission state and remaining optimization gates
 
-- Capture and publish an English demo video under three minutes.
-- Register/join the Amazon Developer Hackathon in Devpost.
-- Enter the final fields, track, Open Source mini-challenge fields, product feedback, and friction logs.
-- Complete any eligibility/legal confirmations personally.
-- Submit and record a receipt.
+The Devpost entry is already submitted as submission **1204416**. The following are candidate improvements, not completed public actions:
+
+- [x] Build and test Daily Briefing locally.
+- [x] Prepare judge-first Demo V2 script.
+- [x] Prepare v0.2 of `mcp-protocol-proof` locally.
+- [x] Harden local MCP smoke to require all eight tools.
+- [ ] Reconcile v0.2 onto the public `mcp-protocol-proof` Git history and push under explicit approval.
+- [ ] Run a genuine Kiro Crew task and capture evidence before claiming AWS Builder; Kiro is not yet installed/authenticated.
+- [ ] Push/deploy the optimized BountyPilot candidate under explicit approval.
+- [ ] Re-run production smoke and verifier against the deployed eight-tool endpoint.
+- [ ] Capture/publish updated demo under explicit approval.
+- [ ] Audit all three friction logs in the actual Devpost fields.
+- [ ] Preview and explicitly approve any Devpost edit before saving.
+
+No AWS Builder qualification, new public push, production deployment, updated video publication, or Devpost edit is claimed by this local pack.
