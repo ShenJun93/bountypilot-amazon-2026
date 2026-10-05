@@ -1,3 +1,5 @@
+import {briefingItems,renderCardSafely} from './render-guards.js';
+
 const $=(selector)=>document.querySelector(selector);
 
 const transcript=$('#transcript');
@@ -162,7 +164,7 @@ function renderBriefingCard(card) {
   box.append(head);
 
   const list=el('ol','briefing-list');
-  const items=card.items ?? [];
+  const items=briefingItems(card);
   if (!items.length) {
     list.append(el('li','briefing-empty','Nothing actionable right now.'));
   } else {
@@ -198,13 +200,9 @@ function addAssistantTurn(payload) {
   bubble.append(el('span','orb small'),el('p','',payload.reply));
   turn.append(bubble);
   for (const card of payload.cards ?? []) {
-    const renderer=renderers[card.type];
-    if (!renderer) continue;
-    try {
-      turn.append(renderer(card));
-    } catch (err) {
-      turn.append(el('p','bubble error',`Card render error (${card.type}): ${err.message}`));
-    }
+    const {node,error}=renderCardSafely(renderers,card);
+    if (node) turn.append(node);
+    else if (error) turn.append(el('p','bubble error',`Card render error (${card?.type ?? 'unknown'}): ${error}`));
   }
 
   if (payload.trace?.length) {
