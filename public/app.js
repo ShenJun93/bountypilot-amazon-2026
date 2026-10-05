@@ -18,10 +18,10 @@ const voiceToggle=$('#voiceToggle');
 const samples={
   go:{
     title:'Build With AI: Basics',
-    listing:'Build With AI: Basics. $1,250 cash first prize. Deadline: October 26, 2026. Build a new app and submit a public GitHub repository plus a 1â€“3 minute demo video. No interview required. Judging is asynchronous after submission.'
+    listing:'Build With AI: Basics. $1,250 cash first prize. Deadline: October 26, 2026. Build a new app and submit a public GitHub repository plus a 1–3 minute demo video. No interview required. Judging is asynchronous after submission.'
   },
   review:{
-    title:'External Help Wanted â€” $250',
+    title:'External Help Wanted — $250',
     listing:'$250 reward. Post a proposal and wait for assignment. You must be hired through Upwork before creating a pull request. GitHub implementation is required after selection.'
   },
   skip:{
@@ -31,10 +31,10 @@ const samples={
 };
 
 const storageLabels={
-  'redis-durable':['State Â· durable','Saved in Redis; survives restarts and redeploys.',true],
-  'local-file':['State Â· local file','Saved to data/state.json on this machine.',true],
-  'ephemeral-vercel-tmp':['State Â· temporary','Hosted demo without a database: the queue may reset on a cold start.',false],
-  memory:['State Â· memory','In-memory only.',false]
+  'redis-durable':['State · durable','Saved in Redis; survives restarts and redeploys.',true],
+  'local-file':['State · local file','Saved to data/state.json on this machine.',true],
+  'ephemeral-vercel-tmp':['State · temporary','Hosted demo without a database: the queue may reset on a cold start.',false],
+  memory:['State · memory','In-memory only.',false]
 };
 
 function storageGet(key) {
@@ -57,7 +57,7 @@ let userHasInteracted=false;
 
 function renderVoiceToggle() {
   voiceToggle.hidden=!canSpeak;
-  voiceToggle.textContent=`Voice replies Â· ${voiceOn?'on':'off'}`;
+  voiceToggle.textContent=`Voice replies · ${voiceOn?'on':'off'}`;
   voiceToggle.setAttribute('aria-pressed',String(voiceOn));
 }
 
@@ -133,7 +133,7 @@ function renderOpportunityCard(card) {
 function renderPlanCard(card) {
   const box=el('div','card plan-card');
   const head=el('div','card-head');
-  head.append(el('strong','',`Plan Â· ${card.title}`),el('span','status',card.status));
+  head.append(el('strong','',`Plan · ${card.title}`),el('span','status',card.status));
   box.append(head);
   const list=el('ol');
   for (const step of card.steps) list.append(el('li','',step));
@@ -150,7 +150,7 @@ function renderQueueCarousel(card) {
   for (const item of card.items) {
     const tile=el('div','tile');
     tile.append(el('strong','tile-score',String(item.score)),el('span','tile-title',item.title));
-    const meta=el('span','tile-meta',`${item.verdict} Â· ${item.status}`);
+    const meta=el('span','tile-meta',`${item.verdict} · ${item.status}`);
     tile.append(meta,el('span','tile-sub',item.reward ?? 'reward unknown'));
     rail.append(tile);
   }
@@ -171,7 +171,7 @@ function renderBriefingCard(card) {
     for (const item of items) {
       const li=el('li','briefing-item');
       const title=el('strong','',item.title);
-      const meta=el('span','briefing-meta',`${item.score}/100 Â· ${item.status} Â· ${item.reward ?? 'reward unknown'} Â· ${item.deadline ?? 'deadline unknown'}`);
+      const meta=el('span','briefing-meta',`${item.score}/100 · ${item.status} · ${item.reward ?? 'reward unknown'} · ${item.deadline ?? 'deadline unknown'}`);
       const next=el('span','briefing-next',`Next: ${item.nextAction}`);
       li.append(title,meta,next);
       if (item.blocker) li.append(el('span','briefing-blocker',`Watch: ${item.blocker}`));
@@ -183,7 +183,7 @@ function renderBriefingCard(card) {
 }
 
 function renderStatusCard(card) {
-  return el('div','card status-card',`${card.title} â†’ ${card.status}`);
+  return el('div','card status-card',`${card.title} → ${card.status}`);
 }
 
 const renderers={
@@ -243,7 +243,7 @@ function renderQueue(data) {
     const main=el('div','queue-main');
     const top=el('div','queue-top');
     top.append(el('h3','',item.title),el('span','status',item.status));
-    main.append(top,el('p','',`${item.analysis.verdict} Â· ${item.analysis.reward?.text ?? 'reward unknown'} Â· ${item.analysis.deadline ?? 'deadline unknown'}`));
+    main.append(top,el('p','',`${item.analysis.verdict} · ${item.analysis.reward?.text ?? 'reward unknown'} · ${item.analysis.deadline ?? 'deadline unknown'}`));
     row.append(score,main);
     queue.append(row);
   }
@@ -251,7 +251,7 @@ function renderQueue(data) {
 
 async function refreshQueue() {
   const result=await api(`/api/queue?workspace=${encodeURIComponent(workspace)}`);
-  runtimeBadge.textContent='MCP Â· connected';
+  runtimeBadge.textContent='MCP · connected';
   runtimeBadge.classList.add('connected');
   renderQueue(result.queue);
 }
@@ -289,7 +289,7 @@ async function send(utterance,{silentUser=false}={}) {
       method:'POST',
       body:JSON.stringify({utterance:text,workspace,...(listing??{})})
     });
-    runtimeBadge.textContent='MCP Â· connected';
+    runtimeBadge.textContent='MCP · connected';
     runtimeBadge.classList.add('connected');
     addAssistantTurn(payload);
     if (listing) detach();
@@ -350,13 +350,13 @@ async function boot() {
   renderVoiceToggle();
   try {
     const health=await api('/health');
-    const [label,title,durable]=storageLabels[health.state] ?? [`State Â· ${health.state}`,'',false];
+    const [label,title,durable]=storageLabels[health.state] ?? [`State · ${health.state}`,'',false];
     storageBadge.textContent=label;
     storageBadge.title=title;
     storageBadge.classList.toggle('connected',durable);
     storageBadge.classList.toggle('warn',!durable);
   } catch {
-    storageBadge.textContent='State Â· unknown';
+    storageBadge.textContent='State · unknown';
   }
   await refreshQueue().catch(()=>{});
   send('Alexa, open BountyPilot',{silentUser:true});
