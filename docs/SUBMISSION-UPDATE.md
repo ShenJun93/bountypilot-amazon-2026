@@ -26,13 +26,13 @@ Local candidate now exposes 8 coherent MCP tools:
 - daily_briefing
 - next_best_action
 
-The same tool surface is used by the web simulator through the official SDK and by external clients through Streamable HTTP. Production must be re-verified after deployment before this is copied into Devpost.
+The same tool surface is used by the web simulator through the official SDK and by external clients through Streamable HTTP. Local candidate verification is complete: `node --test` is **19/19 PASS**, `scripts/mcp-smoke.mjs` reports schema `bountypilot-smoke/v2` with **8/8 tools**, protocol `2026-07-28`, analyzer `GO / 98`, and `pass: true`. `mcp-protocol-proof` v0.2 independently generated `docs/receipts/mcp-protocol-proof-v0.2-local.json` with the same eight-tool PASS. Production must still be re-verified after deployment before this is copied into Devpost.
 
 ## Open Source Mini Challenge update
 
 mcp-protocol-proof v0.2 upgrades the companion project from a one-off verifier into a CI-oriented compatibility proof tool.
 
-v0.2 adds bounded timeouts, deterministic receipt schema mcp-protocol-proof/v1, --output JSON artifact support, stable exit codes, missing-tool checks, a GitHub Actions recipe, and failure-path tests.
+v0.2 adds bounded timeouts, deterministic receipt schema `mcp-protocol-proof/v1`, `--output` JSON artifact support, stable exit codes, missing-tool checks, a GitHub Actions recipe, and failure-path tests. Its local branch `work/mcp-protocol-proof-v0.2` is at commit `03a96cf` and **7/7 tests PASS**.
 
 Do not replace the submitted contribution commit URL until the v0.2 branch is pushed and a new public commit exists.
 

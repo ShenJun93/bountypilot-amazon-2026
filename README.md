@@ -52,7 +52,7 @@ With the server running:
 npm run smoke
 ```
 
-The smoke client performs a real initialize handshake, lists tools, calls `analyze_opportunity`, and prints the negotiated protocol era.
+The smoke client performs a real initialize handshake, requires the full eight-tool surface, calls `analyze_opportunity` and `daily_briefing`, and exits non-zero if protocol/tool/runtime checks fail.
 
 ## Tools
 
