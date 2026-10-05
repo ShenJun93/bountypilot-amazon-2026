@@ -26,7 +26,7 @@ Local candidate now exposes 8 coherent MCP tools:
 - daily_briefing
 - next_best_action
 
-The same tool surface is used by the web simulator through the official SDK and by external clients through Streamable HTTP. Local candidate verification is complete: `node --test` is **19/19 PASS**, `scripts/mcp-smoke.mjs` reports schema `bountypilot-smoke/v2` with **8/8 tools**, protocol `2026-07-28`, analyzer `GO / 98`, and `pass: true`. `mcp-protocol-proof` v0.2 independently generated `docs/receipts/mcp-protocol-proof-v0.2-local.json` with the same eight-tool PASS. Production must still be re-verified after deployment before this is copied into Devpost.
+The same tool surface is used by the web simulator through the official SDK and by external clients through Streamable HTTP. Local candidate verification is complete: `node --test` is **19/19 PASS**, `scripts/mcp-smoke.mjs` reports schema `bountypilot-smoke/v2` with **8/8 tools**, protocol `2026-07-28`, analyzer `GO / 98`, and `pass: true`. `mcp-protocol-proof` v0.2 independently generated `docs/receipts/mcp-protocol-proof-v0.2-local.json` with the same eight-tool PASS. A fresh pre-promotion production run using canonical verifier candidate `411869d...` is captured in `docs/receipts/production-pre-promotion-2026-10-05.json`: production still negotiates `2026-07-28` but exposes **7 tools**, with `daily_briefing` as the only missing candidate tool and expected verifier exit `2`. Production must be re-verified after deployment before any 8-tool claim is copied into Devpost.
 
 ## Open Source Mini Challenge update
 
