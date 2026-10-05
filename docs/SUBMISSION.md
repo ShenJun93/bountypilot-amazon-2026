@@ -1,6 +1,6 @@
 # BountyPilot — Submission Pack
 
-Status: **SUBMITTED / LOCAL PRIZE-OPTIMIZATION CANDIDATE READY / EXTERNAL UPDATE NOT YET PUBLISHED.**
+Status: **SUBMITTED / OPTIMIZED FEATURE BRANCH + PREVIEW VERIFIED / DEVPOST UPDATE NOT YET PUBLISHED.**
 
 ## Primary track
 
@@ -65,7 +65,8 @@ The web simulator uses the same candidate tool definitions through the official 
 Contribution type: new additional open-source project created during the hackathon window.
 
 - Contribution repository: https://github.com/ShenJun93/mcp-protocol-proof
-- Contribution commit: https://github.com/ShenJun93/mcp-protocol-proof/commit/ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba
+- Currently submitted contribution commit: https://github.com/ShenJun93/mcp-protocol-proof/commit/ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba
+- Public v0.2 candidate commit: https://github.com/ShenJun93/mcp-protocol-proof/commit/cb6e96c58b76e39df7e260bcba6775295b99f954
 - Primary project repository: https://github.com/ShenJun93/bountypilot-amazon-2026
 - GitHub username: `ShenJun93`
 - License: MIT
@@ -74,7 +75,7 @@ Contribution type: new additional open-source project created during the hackath
 
 `mcp-protocol-proof` is a narrow CLI that performs a real MCP Streamable HTTP initialize handshake, reports the negotiated protocol version and tool list, compares the result with a required minimum protocol date, optionally checks expected tool names, and exits non-zero when the proof fails.
 
-The **submitted public contribution remains v0.1 at commit `ecd8552c...`**. A local v0.2 candidate has been prepared with bounded timeouts, stable exit codes, JSON receipt output, CI examples, and stronger failure-path tests. Do not claim v0.2 publicly until it is reconciled onto the public repository history and pushed.
+The live Devpost field still points to v0.1 at `ecd8552c...`, but v0.2 is now public on branch `work/mcp-protocol-proof-v0.2-public`, tip `cb6e96c58b76e39df7e260bcba6775295b99f954`. v0.2 adds bounded timeouts, stable exit codes, JSON receipt output, CI examples, and stronger failure-path tests. Replace the Devpost contribution URL only after edit preview and explicit save approval.
 
 ### Why it matters
 
@@ -91,7 +92,7 @@ Protocol compatibility is a runtime property. The CLI gives developers and revie
 - result: PASS
 
 **Optimized local candidate truth**:
-- main test suite: **19/19 PASS**;
+- final reviewed main test suite: **23/23 PASS**;
 - protocol: `2026-07-28` / `modern`;
 - tool count: **8**;
 - `daily_briefing` present;
@@ -176,7 +177,7 @@ These local results must be repeated against production after deployment before 
 - Existing production MCP negotiated protocol: `2026-07-28`.
 - Existing production tool surface: 7 tools.
 - Existing production `analyze_opportunity`: GO, score 98 on the smoke fixture.
-- Optimized candidate unit/integration tests: **19/19 PASS**.
+- Optimized candidate unit/integration tests: **23/23 PASS**.
 - Optimized local MCP smoke: **8/8 tools / PASS**.
 - Local verifier v0.2 tests: **7/7 PASS**.
 - Local verifier receipt: `docs/receipts/mcp-protocol-proof-v0.2-local.json`.
@@ -191,12 +192,12 @@ The Devpost entry is already submitted as submission **1204416**. The following 
 - [x] Prepare judge-first Demo V2 script.
 - [x] Prepare v0.2 of `mcp-protocol-proof` locally.
 - [x] Harden local MCP smoke to require all eight tools.
-- [ ] Reconcile v0.2 onto the public `mcp-protocol-proof` Git history and push under explicit approval.
-- [ ] Run a genuine Kiro Crew task and capture evidence before claiming AWS Builder; Kiro is not yet installed/authenticated.
-- [ ] Push/deploy the optimized BountyPilot candidate under explicit approval.
+- [x] Publish v0.2 on public branch `work/mcp-protocol-proof-v0.2-public`; tip `cb6e96c...`.
+- [x] Run genuine Kiro Crew v0.7.2 workflow and capture evidence; TaskRunner completed 11/11 PASS.
+- [x] Publish optimized BountyPilot feature branch and verify protected preview with 8 MCP tools.
 - [ ] Re-run production smoke and verifier against the deployed eight-tool endpoint.
 - [ ] Capture/publish updated demo under explicit approval.
 - [ ] Audit all three friction logs in the actual Devpost fields.
 - [ ] Preview and explicitly approve any Devpost edit before saving.
 
-No AWS Builder qualification, new public push, production deployment, updated video publication, or Devpost edit is claimed by this local pack.
+AWS Builder qualification is now supported by documented Kiro Crew usage, and the optimized feature branch/Open Source v0.2 branch are public. Production promotion, updated video publication, and Devpost edits are still not claimed or performed.

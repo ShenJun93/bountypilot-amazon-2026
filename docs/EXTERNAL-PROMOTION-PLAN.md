@@ -7,64 +7,60 @@ Local-only plan. No external action is authorized by this document.
 Primary repo:
 - workspace: `E:\Projects\bountypilot-amazon-2026`
 - branch: `work/amazon-prize-optimization-v1`
-- local HEAD before this receipt update: `b6fb9309a8afad82ee5b31c6e5bd0e946c6bd473`
-- regression: **19/19 PASS**
-- local MCP smoke: **8 tools / PASS**
-- negotiated protocol: `2026-07-28`
+- current reviewed feature-branch tip before this docs-only update: `e8a3e2199d6cc612d97b665a2dc955cfb61ae8a0`
+- regression: **23/23 PASS**
+- local/preview MCP smoke: **8 tools / PASS**
+- negotiated preview protocol: `2025-11-25` from the protected Vercel preview endpoint
 - new judge-facing capability: `daily_briefing`
 
 Open-source companion:
-- submitted public repo: `https://github.com/ShenJun93/mcp-protocol-proof`
-- submitted public commit: `ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba`
-- superseded prototype: nested local commit `03a96cf`, **7/7 PASS**; do not push this history.
-- canonical push candidate: `E:\\Projects\\mcp-protocol-proof-public-v0.2`, branch `work/mcp-protocol-proof-v0.2-public`, commit `411869d9d57604fbb26119ff6002f392326920f6`, **7/7 PASS**.
-- canonical candidate is a direct child of the submitted public commit `ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba`, so no history rewrite or force push is needed.
+- public repo: `https://github.com/ShenJun93/mcp-protocol-proof`
+- currently submitted Devpost contribution commit: `ecd8552ce5b55ee71f63ed3d4f26bfcd111e62ba`
+- v0.2 public branch: `work/mcp-protocol-proof-v0.2-public`
+- v0.2 public tip: `cb6e96c58b76e39df7e260bcba6775295b99f954`
+- v0.2 tests: **7/7 PASS**
+- candidate Devpost contribution URL: `https://github.com/ShenJun93/mcp-protocol-proof/commit/cb6e96c58b76e39df7e260bcba6775295b99f954`
 
 AWS Builder:
-- current Devpost choice: **No**
-- candidate qualification: **NOT YET QUALIFIED**
-- Kiro Crew installed/authenticated: **No**
-- claim AWS Builder only after a genuine Kiro Crew task is run, reviewed, tested, and recorded.
+- current Devpost choice: **No** until the submission is explicitly edited
+- candidate qualification: **QUALIFIED**
+- Kiro Crew v0.7.2 workflow: **completed 11/11 PASS**
+- final Kiro evidence: reviewed and recorded in `docs/KIRO-CREW-EVIDENCE.md`
+
+Official deadline currently shown by Devpost: **October 23, 2026 at 12:00 PM PDT**.
 
 ## Recommended safe promotion sequence
 
-### Gate A — Kiro Crew
+### Gate A — Kiro Crew — COMPLETE
 
-Requires explicit approval because it installs/authenticates an external AWS/Kiro tool.
+1. Official Kiro Crew/CLI installed and authenticated.
+2. `docs/KIRO-CREW-TASK.md` executed through Kiro Crew.
+3. TaskRunner completed **11/11 PASS**.
+4. Resulting code change reviewed.
+5. Final BountyPilot regression: **23/23 PASS**.
+6. `docs/KIRO-CREW-EVIDENCE.md` completed.
+7. AWS Builder claim is now technically supported; Devpost edit remains pending explicit approval.
 
-1. Install official Kiro Crew/CLI.
-2. User completes login/terms if prompted.
-3. Run only `docs/KIRO-CREW-TASK.md`.
-4. Review the resulting diff.
-5. Run `node --test` + `git diff --check`.
-6. Complete `docs/KIRO-CREW-EVIDENCE.md`.
-7. Only then mark the AWS Builder candidate as eligible.
+### Gate B — Open Source v0.2 — PUBLIC BRANCH COMPLETE
 
-### Gate B — Open Source v0.2
+1. v0.2 is public on `work/mcp-protocol-proof-v0.2-public`.
+2. Public tip: `cb6e96c58b76e39df7e260bcba6775295b99f954`.
+3. 7/7 tests PASS.
+4. Exact public commit URL is available.
+5. Remaining action: update the Devpost Open Source contribution URL only after previewing the edit and obtaining explicit save/publish approval.
 
-Requires explicit public push approval.
+### Gate C — BountyPilot candidate — FEATURE BRANCH + PREVIEW COMPLETE
 
-1. Rebase/port v0.2 onto a fresh local clone of the public `mcp-protocol-proof` history.
-2. Run its 7/7 tests and a BountyPilot endpoint proof.
-3. Push one reviewed commit to the public repo.
-4. Capture the exact public commit URL.
-5. Update Amazon Devpost Open Source contribution URL only after the public commit exists.
-
-### Gate C — BountyPilot candidate
-
-Requires explicit public push/deploy approval.
-
-1. Push the optimized BountyPilot branch.
-2. Deploy a preview or production candidate.
-3. Verify:
-   - health;
-   - 8 tools;
+1. Public feature branch: `work/amazon-prize-optimization-v1`.
+2. Latest remote tip before this docs-only update: `e8a3e2199d6cc612d97b665a2dc955cfb61ae8a0`.
+3. Protected Vercel preview is READY.
+4. Authenticated preview verification:
+   - 8 MCP tools;
    - `daily_briefing`;
-   - protocol `2026-07-28`;
-   - analyzer GO/98;
-   - durable state;
-   - browser Daily Briefing flow.
-4. Do not update Devpost claims unless production evidence passes.
+   - empty-queue briefing path;
+   - GO listing save/next action;
+   - daily briefing card with array `items`.
+5. Remaining action: production promotion + production smoke before changing live Devpost claims from seven to eight tools.
 
 ### Gate D — Presentation
 
@@ -81,12 +77,12 @@ Requires explicit Devpost-edit approval.
 
 Before saving:
 - confirm Alexa+ remains the primary track;
-- mark AWS Builder = Yes only if Gate A passed;
+- mark AWS Builder = Yes;
 - keep Open Source = Yes;
-- replace contribution commit only if Gate B passed;
+- replace the Open Source contribution commit with `cb6e96c...`;
 - verify all 3 friction logs are present in the actual form fields;
-- update 7 → 8 tools only if Gate C production proof passed;
-- update video only if Gate D passed;
+- update 7 → 8 tools only after production proof passes;
+- update video only if Gate D passes;
 - preview all links and text.
 
 ## Rollback rule
