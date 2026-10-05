@@ -120,3 +120,32 @@ test('daily briefing prioritizes actionable work ahead of submitted work',async(
   assert.equal(out.cards[0].items[1].title,'Big Prize');
   assert.match(out.reply,/Today's focus is Smaller Async/);
 });
+
+test('briefing card items is always an array, never null or undefined',async()=>{
+  // Guards the null-guard added to renderBriefingCard in step 7:
+  // card.items ?? [] must never be needed because the card produced by
+  // converse() already guarantees an array -- but the renderer must also
+  // survive a card where items is missing.
+  const {call}=setup();
+  await converse({title:'Build With AI',listing:GO,workspace:'w1'},call);
+  const out=await converse({utterance:'What should I work on today?',workspace:'w1'},call);
+  assert.equal(out.intent,'next');
+  assert.equal(out.cards[0].type,'briefing');
+  assert.ok(Array.isArray(out.cards[0].items),'briefing card items must be an Array');
+  assert.ok(out.cards[0].items.length>0,'items must be non-empty when the queue has entries');
+  for (const item of out.cards[0].items) {
+    assert.ok(typeof item.title==='string','each item must carry a title string');
+    assert.ok(typeof item.nextAction==='string','each item must carry a nextAction string');
+  }
+});
+
+test('daily briefing with an empty queue replies with an empty-queue message and no card',async()=>{
+  // Exercises the path that produces zero briefing items -- the renderer
+  // null-guard must handle an empty items array, and converse() must not
+  // produce a briefing card at all in this case.
+  const {call}=setup();
+  const out=await converse({utterance:'What should I work on today?',workspace:'w1'},call);
+  assert.equal(out.intent,'next');
+  assert.equal(out.cards.length,0,'no briefing card should be emitted for an empty queue');
+  assert.match(out.reply,/queue is empty/);
+});
