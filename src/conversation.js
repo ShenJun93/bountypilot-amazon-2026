@@ -141,11 +141,14 @@ export async function converse({utterance='',title='',listing='',workspace='defa
 
   if (intent.kind==='next') {
     const briefing=data(await call('daily_briefing',{limit:3}));
-    if (!briefing.priorities.length) {
+    if (!briefing) {
+      reply='Sorry, I could not load your briefing right now. Please try again.';
+    } else if (!briefing.priorities.length) {
       reply='Your queue is empty. Paste a listing and ask me whether it is worth building.';
     } else {
       const [first,second]=briefing.priorities;
-      reply=`Today's focus is ${first.title}, currently ${first.status}. Next: ${first.nextAction}`;
+      const nextAction=first.nextAction ?? 'no next action recorded';
+      reply=`Today's focus is ${first.title}, currently ${first.status}. Next: ${nextAction}`;
       if (second) reply+=` Second priority: ${second.title}.`;
       cards.push({type:'briefing',activeCount:briefing.activeCount,items:briefing.priorities});
     }
